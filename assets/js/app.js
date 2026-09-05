@@ -206,8 +206,9 @@
     $('#footer-address').textContent = settings.address || settings.locationName;
     $('#footer-location').textContent = settings.locationName;
     const cnpj = $('#footer-cnpj');
-    cnpj.textContent = settings.cnpj || '';
-    $('#footer-cnpj-row').hidden = !settings.cnpj;
+    const cnpjRow = $('#footer-cnpj-row');
+    if (cnpj) cnpj.textContent = settings.cnpj || '';
+    if (cnpjRow) cnpjRow.hidden = !settings.cnpj;
     const phone = $('#footer-phone');
     phone.textContent = settings.contactPhone;
     const phoneDigits = String(settings.contactPhone).replace(/\D/g, '');
