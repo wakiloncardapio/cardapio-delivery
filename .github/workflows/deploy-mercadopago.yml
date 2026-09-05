@@ -2,13 +2,6 @@ name: Deploy Mercado Pago
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'supabase/functions/create-checkout/**'
-      - 'supabase/functions/mercadopago-webhook/**'
-      - 'supabase/functions/payment-status/**'
-      - '.github/workflows/deploy-mercadopago.yml'
 
 permissions:
   contents: read

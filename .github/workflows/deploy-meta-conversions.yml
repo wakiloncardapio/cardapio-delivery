@@ -2,12 +2,6 @@ name: Deploy Meta Conversions API
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'supabase/functions/meta-conversions/**'
-      - 'supabase/functions/confirmed-conversions/**'
-      - '.github/workflows/deploy-meta-conversions.yml'
 
 permissions:
   contents: read

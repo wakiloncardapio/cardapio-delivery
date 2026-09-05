@@ -2,10 +2,6 @@ name: Deploy order-email
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'supabase/functions/order-email/**'
 
 permissions:
   contents: read
