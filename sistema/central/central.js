@@ -60,6 +60,25 @@
     return platform.domains.filter(domain => domain.store_id === storeId);
   }
 
+  function storeLogo(store, className = 'store-avatar') {
+    const initial = String(store.name || 'E').trim()[0]?.toUpperCase() || 'E';
+    return store.logo_url
+      ? `<span class="${className} has-image"><img src="${esc(store.logo_url)}" alt="Logo de ${esc(store.name)}"></span>`
+      : `<span class="${className}">${esc(initial)}</span>`;
+  }
+
+  async function saveStoreLogo(storeId, logoUrl) {
+    const result = await invoke('update_store', { storeId, logoUrl });
+    platform = result.platform;
+    render();
+  }
+
+  async function uploadStoreLogo(store, file) {
+    if (!file) return '';
+    SupabaseStore.chooseStore(store);
+    return SupabaseStore.uploadImage(file, 'logos');
+  }
+
   function memberMarkup(store) {
     const members = storeMembers(store.id);
     return `
@@ -81,23 +100,33 @@
 
   function storeMarkup(store) {
     const disabled = store.is_demo ? 'disabled' : '';
-    const initial = String(store.name || 'E').trim()[0]?.toUpperCase() || 'E';
     return `<article class="store-card" data-store-card="${store.id}">
-      <header><div class="store-identity"><span>${esc(initial)}</span><div><h2>${esc(store.name)}</h2><p>seufood.com/${esc(store.slug)}</p></div></div>
+      <header><div class="store-identity">${storeLogo(store)}<div><h2>${esc(store.name)}</h2><p>seufood.com/${esc(store.slug)}</p></div></div>
       <div class="badges">${store.is_demo ? '<span class="badge demo">Demonstração</span>' : ''}<span class="badge ${esc(store.status)}">${esc(store.status)}</span></div>
       <div class="store-actions"><a href="${esc(publicUrl(store))}" target="_blank">Ver cardápio</a><a href="${esc(adminUrl(store))}" target="_blank">Abrir painel</a></div></header>
       <div class="store-body">
         <section class="panel store-config"><h3>Empresa e disponibilidade</h3><form data-store-form="${store.id}">
+          <div class="store-logo-editor">
+            ${storeLogo(store, 'store-logo-preview')}
+            <div class="store-logo-copy"><b>Logo da empresa</b><small>PNG, JPG ou WebP. Otimização automática para carregamento rápido.</small>
+              <div class="store-logo-actions"><label class="logo-upload-button">${store.logo_url ? 'Trocar logo' : 'Enviar logo'}<input type="file" data-store-logo-upload="${store.id}" accept="image/png,image/jpeg,image/webp"></label>${store.logo_url ? `<button type="button" data-remove-store-logo="${store.id}">Remover</button>` : ''}</div>
+            </div>
+            <label class="store-logo-url">URL da logo<input name="logoUrl" type="url" value="${esc(store.logo_url || '')}" placeholder="https://..."></label>
+          </div>
           <div class="store-settings"><label>Nome<input name="name" value="${esc(store.name)}" required></label><label>Endereço<input name="slug" value="${esc(store.slug)}" required></label>
           <label>Situação<select name="status" ${disabled}><option value="active" ${store.status === 'active' ? 'selected' : ''}>Ativa</option><option value="suspended" ${store.status === 'suspended' ? 'selected' : ''}>Suspensa</option><option value="archived" ${store.status === 'archived' ? 'selected' : ''}>Arquivada</option></select></label>
           <label class="switch">Cardápio público<input name="storefrontEnabled" type="checkbox" ${store.storefront_enabled ? 'checked' : ''} ${disabled}></label></div>
-          <div class="future-fields"><small>Campos preparados para uso futuro. Vazios não aplicam cobrança nem bloqueio.</small><div class="future-fields-grid">
-            <label class="full">Plano<input name="planName" value="${esc(store.plan_name || '')}" placeholder="Sem plano definido"></label>
-            <label class="full">Vencimento<input name="accessExpiresAt" type="datetime-local" value="${esc(store.access_expires_at ? String(store.access_expires_at).slice(0,16) : '')}"></label>
-            <label>Limite de produtos<input name="maxProducts" type="number" min="0" value="${esc(store.max_products ?? '')}" placeholder="Sem limite"></label>
-            <label>Pedidos por mês<input name="maxOrdersMonth" type="number" min="0" value="${esc(store.max_orders_month ?? '')}" placeholder="Sem limite"></label>
-            <label class="full">Armazenamento em MB<input name="maxStorageMb" type="number" min="0" value="${esc(store.max_storage_mb ?? '')}" placeholder="Sem limite"></label>
-          </div></div><button class="primary save-store" type="submit">Salvar empresa</button></form></section>
+          <section class="future-fields"><header><div><small>CONTROLE DA CONTA</small><h4>Plano, vencimento e limites</h4><p>Prepare as regras comerciais agora. Campos vazios continuam sem cobrança e sem bloqueio.</p></div><span>OPCIONAL</span></header>
+            <div class="plan-fields">
+              <label class="limit-field plan"><span class="limit-icon">P</span><span class="limit-copy"><b>Plano da empresa</b><small>Identificação interna</small></span><input name="planName" value="${esc(store.plan_name || '')}" placeholder="Sem plano definido"></label>
+              <label class="limit-field expiry"><span class="limit-icon">V</span><span class="limit-copy"><b>Vencimento</b><small>Data preparada para uso futuro</small></span><input name="accessExpiresAt" type="datetime-local" value="${esc(store.access_expires_at ? String(store.access_expires_at).slice(0,16) : '')}"></label>
+            </div>
+            <div class="future-fields-grid">
+              <label class="limit-field"><span class="limit-icon">01</span><span class="limit-copy"><b>Produtos</b><small>Quantidade máxima</small></span><input name="maxProducts" type="number" min="0" value="${esc(store.max_products ?? '')}" placeholder="Sem limite"></label>
+              <label class="limit-field"><span class="limit-icon">02</span><span class="limit-copy"><b>Pedidos mensais</b><small>Total por mês</small></span><input name="maxOrdersMonth" type="number" min="0" value="${esc(store.max_orders_month ?? '')}" placeholder="Sem limite"></label>
+              <label class="limit-field"><span class="limit-icon">03</span><span class="limit-copy"><b>Armazenamento</b><small>Espaço para imagens</small></span><div class="input-unit"><input name="maxStorageMb" type="number" min="0" value="${esc(store.max_storage_mb ?? '')}" placeholder="Sem limite"><span>MB</span></div></label>
+            </div>
+          </section><button class="primary save-store" type="submit">Salvar empresa</button></form></section>
         <section class="panel"><h3>Pessoas com acesso</h3>${memberMarkup(store)}</section>
         <section class="panel"><h3>Domínios</h3>${domainMarkup(store)}</section>
       </div></article>`;
@@ -150,18 +179,39 @@
     $('#new-store-slug').value = event.target.value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   };
   $('#new-store-slug').oninput = event => { event.target.dataset.edited = 'true'; };
+  $('#new-store-logo').onchange = event => {
+    const file = event.target.files?.[0];
+    const preview = $('#new-store-logo-preview');
+    $('#new-store-logo-name').textContent = file ? file.name : 'Nenhum arquivo selecionado';
+    if (!file) return preview.innerHTML = '<span>SF</span>';
+    const objectUrl = URL.createObjectURL(file);
+    preview.innerHTML = `<img src="${objectUrl}" alt="Prévia da logo">`;
+    preview.querySelector('img').onload = () => URL.revokeObjectURL(objectUrl);
+  };
   $('#new-store-form').onsubmit = async event => {
     event.preventDefault();
     const form = event.currentTarget;
     form.classList.add('busy');
     try {
+      const logoFile = $('#new-store-logo').files?.[0];
       const result = await invoke('create_store', { name: $('#new-store-name').value, slug: $('#new-store-slug').value, ownerEmail: $('#new-store-owner').value });
       platform = result.platform;
+      let logoWarning = '';
+      if (logoFile) {
+        try {
+          const logoUrl = await uploadStoreLogo(result.store, logoFile);
+          await saveStoreLogo(result.store.id, logoUrl);
+        } catch (error) {
+          logoWarning = ` A empresa foi criada, mas a logo não foi enviada: ${error.message}`;
+        }
+      }
       render();
       form.reset();
       $('#new-store-slug').dataset.edited = '';
+      $('#new-store-logo-name').textContent = 'Nenhum arquivo selecionado';
+      $('#new-store-logo-preview').innerHTML = '<span>SF</span>';
       $('#new-store-dialog').hidden = true;
-      notice(result.invitationLink ? 'Empresa criada. Copie o convite abaixo e envie ao responsável.' : 'Empresa criada com sucesso.', false, result.invitationLink || '');
+      notice(`${result.invitationLink ? 'Empresa criada. Copie o convite abaixo e envie ao responsável.' : 'Empresa criada com sucesso.'}${logoWarning}`, Boolean(logoWarning), result.invitationLink || '');
     } catch (error) { notice(error.message, true); }
     finally { form.classList.remove('busy'); }
   };
@@ -178,7 +228,8 @@
           name: data.get('name'), slug: data.get('slug'), status: data.get('status'),
           storefrontEnabled: data.get('storefrontEnabled') === 'on', planName: data.get('planName'),
           accessExpiresAt: data.get('accessExpiresAt'), maxProducts: data.get('maxProducts'),
-          maxOrdersMonth: data.get('maxOrdersMonth'), maxStorageMb: data.get('maxStorageMb')
+          maxOrdersMonth: data.get('maxOrdersMonth'), maxStorageMb: data.get('maxStorageMb'),
+          logoUrl: data.get('logoUrl')
         });
         platform = result.platform;
         notice('Empresa atualizada.');
@@ -198,12 +249,34 @@
     finally { form.classList.remove('busy'); }
   };
 
+  $('#store-list').onchange = async event => {
+    const input = event.target.closest('[data-store-logo-upload]');
+    if (!input) return;
+    const store = platform.stores.find(item => item.id === input.dataset.storeLogoUpload);
+    const file = input.files?.[0];
+    if (!store || !file) return;
+    const editor = input.closest('.store-logo-editor');
+    editor?.classList.add('busy');
+    try {
+      const logoUrl = await uploadStoreLogo(store, file);
+      await saveStoreLogo(store.id, logoUrl);
+      notice('Logo enviada e aplicada no painel e no cardápio.');
+    } catch (error) { notice(error.message, true); }
+    finally { editor?.classList.remove('busy'); input.value = ''; }
+  };
+
   $('#store-list').onclick = async event => {
     const memberButton = event.target.closest('[data-member-active]');
     const domainButton = event.target.closest('[data-delete-domain]');
-    if (!memberButton && !domainButton) return;
+    const logoButton = event.target.closest('[data-remove-store-logo]');
+    if (!memberButton && !domainButton && !logoButton) return;
     event.target.disabled = true;
     try {
+      if (logoButton) {
+        await saveStoreLogo(logoButton.dataset.removeStoreLogo, '');
+        notice('Logo removida. A empresa voltou a usar a inicial do nome.');
+        return;
+      }
       const result = memberButton
         ? await invoke('set_member_active', { storeId: memberButton.dataset.storeId, userId: memberButton.dataset.memberActive, active: memberButton.dataset.active === 'true' })
         : await invoke('delete_domain', { domainId: domainButton.dataset.deleteDomain });

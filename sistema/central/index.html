@@ -6,7 +6,8 @@
   <meta name="robots" content="noindex,nofollow">
   <title>Central Seu Food</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon/favicon.svg">
-  <link rel="stylesheet" href="central.css?v=20260905-foundation">
+  <link rel="stylesheet" href="central.css?v=20260905-brand-limits">
+  <link rel="stylesheet" href="central-enhancements.css?v=20260905-brand-limits">
 </head>
 <body>
   <section class="auth" id="auth-screen">
@@ -58,6 +59,15 @@
         <label>Nome da empresa<input id="new-store-name" required placeholder="Ex.: Japa Pou"></label>
         <label>Endereço no Seu Food<div class="slug-field"><span>seufood.com/</span><input id="new-store-slug" required placeholder="japapou"></div></label>
         <label>E-mail do responsável <small>Opcional: o convite poderá ser copiado e enviado pelo WhatsApp.</small><input id="new-store-owner" type="email" placeholder="responsavel@empresa.com"></label>
+        <div class="new-store-logo-field">
+          <div class="new-store-logo-preview" id="new-store-logo-preview"><span>SF</span></div>
+          <div>
+            <b>Logo da empresa <small>Opcional</small></b>
+            <p>PNG, JPG ou WebP. A imagem será otimizada automaticamente.</p>
+            <label class="logo-upload-button">Escolher logo<input id="new-store-logo" type="file" accept="image/png,image/jpeg,image/webp"></label>
+            <span id="new-store-logo-name">Nenhum arquivo selecionado</span>
+          </div>
+        </div>
         <aside>O novo cardápio recebe as cores e os produtos da demonstração, mas fica independente. Contatos e integrações começam vazios. Plano, vencimento e limites também permanecem em branco.</aside>
       </div>
       <footer><button type="button" data-close-dialog>Cancelar</button><button class="primary" type="submit">Criar empresa</button></footer>
@@ -66,7 +76,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="../../assets/js/supabase-config.js"></script>
+  <script src="../../assets/js/r2-config.js"></script>
   <script src="../../assets/js/supabase-store.js?v=20260905-multitenant-foundation"></script>
-  <script src="central.js?v=20260905-foundation"></script>
+  <script src="central.js?v=20260905-brand-limits"></script>
 </body>
 </html>

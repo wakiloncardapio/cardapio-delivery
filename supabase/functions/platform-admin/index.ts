@@ -25,6 +25,8 @@ function starterCatalogData(row: any, storeName: string) {
     storeName,
     establishmentName: storeName,
     seoTitle: `${storeName} | Cardápio on-line`,
+    logoUrl: '',
+    faviconUrl: '',
     locationName: 'Sua cidade - UF',
     city: '',
     address: '',
@@ -86,18 +88,21 @@ async function audit(db: any, actorId: string, storeId: string | null, action: s
 }
 
 async function listPlatform(db: any) {
-  const [{ data: stores, error: storesError }, { data: members, error: membersError }, { data: domains, error: domainsError }, users] = await Promise.all([
+  const [{ data: stores, error: storesError }, { data: members, error: membersError }, { data: domains, error: domainsError }, { data: settings, error: settingsError }, users] = await Promise.all([
     db.from('stores').select('*').order('is_demo', { ascending: false }).order('created_at', { ascending: true }),
     db.from('store_members').select('store_id,user_id,role,active,created_at,updated_at'),
     db.from('store_domains').select('id,store_id,hostname,kind,status,is_primary,created_at,updated_at').order('created_at'),
+    db.from('catalogs').select('store_id,data').eq('id', 'settings'),
     listAllUsers(db)
   ]);
   if (storesError) throw storesError;
   if (membersError) throw membersError;
   if (domainsError) throw domainsError;
+  if (settingsError) throw settingsError;
   const emails = Object.fromEntries(users.map(user => [user.id, user.email || '']));
+  const logos = Object.fromEntries((settings || []).map((row: any) => [row.store_id, String(row.data?.logoUrl || '')]));
   return {
-    stores: stores || [],
+    stores: (stores || []).map((store: any) => ({ ...store, logo_url: logos[store.id] || '' })),
     members: (members || []).map(member => ({ ...member, email: emails[member.user_id] || '' })),
     domains: domains || []
   };
@@ -186,6 +191,8 @@ Deno.serve(async req => {
     if (action === 'update_store') {
       const storeId = String(body.storeId || '');
       const patch: Record<string, unknown> = {};
+      const logoUrl = body.logoUrl === undefined ? undefined : String(body.logoUrl || '').trim();
+      if (logoUrl && !/^https:\/\//i.test(logoUrl)) return json({ error: 'A URL da logo precisa começar com https://.' }, 400);
       if (body.name !== undefined) patch.name = String(body.name || '').trim();
       if (body.slug !== undefined) patch.slug = cleanSlug(body.slug);
       if (body.status !== undefined) patch.status = String(body.status);
@@ -200,9 +207,27 @@ Deno.serve(async req => {
         delete patch.status;
         delete patch.storefront_enabled;
       }
-      const { data: store, error } = await db.from('stores').update(patch).eq('id', storeId).select('*').single();
-      if (error) throw error;
-      await audit(db, actor.id, storeId, 'store_updated', { fields: Object.keys(patch) });
+      let store: any = null;
+      if (Object.keys(patch).length) {
+        const result = await db.from('stores').update(patch).eq('id', storeId).select('*').single();
+        if (result.error) throw result.error;
+        store = result.data;
+      } else {
+        const result = await db.from('stores').select('*').eq('id', storeId).single();
+        if (result.error) throw result.error;
+        store = result.data;
+      }
+      if (logoUrl !== undefined) {
+        const { data: settingsRow, error: settingsReadError } = await db.from('catalogs')
+          .select('data').eq('store_id', storeId).eq('id', 'settings').single();
+        if (settingsReadError) throw settingsReadError;
+        const { error: logoError } = await db.from('catalogs').update({
+          data: { ...(settingsRow?.data || {}), logoUrl },
+          updated_at: new Date().toISOString()
+        }).eq('store_id', storeId).eq('id', 'settings');
+        if (logoError) throw logoError;
+      }
+      await audit(db, actor.id, storeId, 'store_updated', { fields: [...Object.keys(patch), ...(logoUrl !== undefined ? ['logoUrl'] : [])] });
       return json({ store, platform: await listPlatform(db) });
     }
 
