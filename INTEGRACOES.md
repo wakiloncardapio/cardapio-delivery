@@ -11,7 +11,7 @@ Na versão multiempresa, use o código de `cloudflare/r2-upload-worker.js`. Ele 
 | Variável | Valor |
 |---|---|
 | `SUPABASE_URL` | URL do projeto Supabase |
-| `SUPABASE_ANON_KEY` | Chave pública/publicável do Supabase |
+| `SUPABASE_PUBLISHABLE_KEY` | Chave pública/publicável do Supabase (o Worker também aceita o nome antigo `SUPABASE_ANON_KEY`) |
 | `R2_PUBLIC_URL` | URL pública do bucket, sem barra no final |
 
 Depois de atualizar o código, publique o Worker. Não coloque a `service_role` no Cloudflare.
