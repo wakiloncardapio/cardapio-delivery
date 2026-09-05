@@ -31,7 +31,7 @@ jobs:
           cp -R assets data _site/
           rm -rf _site/data/orders
           cp sistema/admin/index.html sistema/admin/admin.css sistema/admin/github-admin.js _site/sistema/admin/
-          cp sistema/central/index.html sistema/central/central.css sistema/central/central.js _site/sistema/central/
+          cp sistema/central/index.html sistema/central/central.css sistema/central/central-enhancements.css sistema/central/central.js _site/sistema/central/
           cp sistema/convite/index.html sistema/convite/invite.js _site/sistema/convite/
           touch _site/.nojekyll
 
