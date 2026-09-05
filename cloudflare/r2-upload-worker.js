@@ -64,6 +64,9 @@ export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders });
     const url = new URL(request.url);
+    if (request.method === 'GET' && url.pathname === '/') {
+      return json({ ok: true, service: 'Seu Food R2 Upload', multiTenant: true });
+    }
     if (request.method !== 'POST' || url.pathname !== '/upload') {
       return json({ error: 'Rota não encontrada.' }, 404);
     }
