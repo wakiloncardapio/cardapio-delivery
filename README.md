@@ -1,16 +1,26 @@
-# Cardápio Delivery — versão independente
+# Seu Food — cardápio multiempresa
 
-Modelo derivado do cardápio original, mantendo layout, cores e funcionalidades. Esta cópia não contém nome, domínio, telefone, e-mail, IDs de rastreamento ou conexão com o Supabase do estabelecimento original.
+Base de demonstração para operar vários cardápios independentes com um único código. Cada empresa possui seu próprio catálogo, pedidos, configurações, pessoas autorizadas, páginas e domínios. A loja atual permanece como demonstração e não existe cobrança, vencimento ou limite automático nesta fase.
+
+## Endereços da plataforma
+
+- Cardápio de demonstração: `/` ou `/?loja=demonstracao`
+- Painel de uma empresa: `/sistema/admin/?loja=slug-da-empresa`
+- Administração central: `/sistema/central/`
+- Convites: `/sistema/convite/`
+
+Quando o domínio principal for conectado, o resolvedor já aceita `seufood.com/empresa`, `empresa.seufood.com` e domínios personalizados ativos. No GitHub Pages, as empresas usam temporariamente `?loja=empresa`.
 
 ## Antes de publicar
 
 1. Crie um projeto novo no Supabase.
 2. Execute `database/supabase.sql` no SQL Editor.
-3. Crie o usuário administrador em **Authentication > Users** e desative cadastros públicos.
-4. Preencha `assets/js/supabase-config.js` somente com a URL e a chave pública/publicável do novo projeto.
-5. Configure `assets/js/r2-config.js` com a URL do Worker protegido que envia imagens ao Cloudflare R2.
-6. Edite os dados iniciais de `data/config/store.json` ou faça isso pelo painel.
-7. Revise `politicas.html`, `robots.txt` e `sitemap.xml` para o domínio do novo estabelecimento.
+3. Em uma instalação já existente, execute `database/migrations/004_multi_tenant.sql` depois das migrações 002 e 003.
+4. Crie o usuário administrador em **Authentication > Users** e desative cadastros públicos. A migração transforma o usuário mais antigo no administrador central.
+5. Preencha `assets/js/supabase-config.js` somente com a URL e a chave pública/publicável do novo projeto.
+6. Configure `assets/js/r2-config.js` com a URL do Worker protegido que envia imagens ao Cloudflare R2.
+7. Publique as funções pelo workflow **Ativar base multiempresa**.
+8. Edite a demonstração pelo painel e crie as demais empresas na Central Seu Food.
 
 Nunca coloque a chave `service_role`, token do Mercado Pago, token da Meta ou senha no código público.
 
@@ -29,4 +39,4 @@ As instruções estão em `INTEGRACOES.md`. Os workflows esperam Secrets própri
 
 ## Publicação
 
-O código pode ser publicado pelo GitHub Actions ou conectado ao Cloudflare Pages. O GitHub continua sendo o local do código, sem compartilhar banco ou credenciais com o estabelecimento original.
+O código pode continuar gratuitamente no GitHub Pages durante a demonstração. Para usar caminhos, subdomínios e domínios próprios em produção, a mesma base pode ser publicada em Cloudflare Workers/Pages. GitHub guarda o código; Supabase separa dados e acessos; Cloudflare R2 guarda as imagens.

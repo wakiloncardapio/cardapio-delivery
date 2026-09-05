@@ -34,7 +34,8 @@ async function sendGa4(db: any, order: any, forceRetry = false) {
   let measurementId = Deno.env.get('GA4_MEASUREMENT_ID') || '';
   const apiSecret = Deno.env.get('GA4_API_SECRET') || '';
   if (!measurementId) {
-    const { data: settings } = await db.from('catalogs').select('data').eq('id', 'settings').maybeSingle();
+    const { data: settings } = await db.from('catalogs').select('data')
+      .eq('store_id', order.store_id).eq('id', 'settings').maybeSingle();
     measurementId = String(settings?.data?.ga4Id || '');
   }
   if (!/^G-[A-Z0-9]+$/i.test(measurementId) || !apiSecret) return { sent: false, configured: false };
@@ -50,7 +51,7 @@ async function sendGa4(db: any, order: any, forceRetry = false) {
     await db.from('order_webhook_events').update({ status: 'processando', error_message: '', updated_at: new Date().toISOString() }).eq('id', auditId);
   } else {
     const { error } = await db.from('order_webhook_events').insert({
-      id: auditId, order_id: order.id, event_type: eventType,
+      id: auditId, store_id: order.store_id, order_id: order.id, event_type: eventType,
       source_updated_at: order.created_at, status: 'processando'
     });
     if (error?.code === '23505') return { sent: false, duplicate: true, processing: true };
@@ -99,22 +100,33 @@ async function sendGa4(db: any, order: any, forceRetry = false) {
   }
 }
 
+async function canManageStore(db: any, req: Request, storeId: string) {
+  const token = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+  const { data: authData, error: authError } = await db.auth.getUser(token);
+  if (authError || !authData.user) return false;
+  const [{ data: platformAdmin }, { data: member }] = await Promise.all([
+    db.from('platform_admins').select('user_id').eq('user_id', authData.user.id).maybeSingle(),
+    db.from('store_members').select('role').eq('store_id', storeId).eq('user_id', authData.user.id)
+      .eq('active', true).in('role', ['owner', 'manager']).maybeSingle()
+  ]);
+  return Boolean(platformAdmin || member);
+}
+
 Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   if (req.method !== 'POST') return json({ error: 'Método não permitido.' }, 405);
   const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-  const { orderId, eventId, sourceUrl, forceRetry = false } = await req.json().catch(() => ({}));
+  const { orderId, eventId, storeId, sourceUrl, forceRetry = false } = await req.json().catch(() => ({}));
   if (!supabaseUrl || !serviceKey) return json({ error: 'Supabase incompleto.' }, 503);
-  if (!orderId || !eventId) return json({ error: 'Pedido inválido.' }, 400);
+  if (!orderId || !eventId || !storeId) return json({ error: 'Pedido inválido.' }, 400);
 
   const db = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
-  if (forceRetry) {
-    const token = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
-    const { data: authData, error: authError } = await db.auth.getUser(token);
-    if (authError || !authData.user) return json({ error: 'Apenas o administrador pode reenviar conversões.' }, 401);
+  if (forceRetry && !(await canManageStore(db, req, String(storeId)))) {
+    return json({ error: 'Apenas o gestor desta empresa pode reenviar conversões.' }, 401);
   }
-  const { data: order, error } = await db.from('orders').select('*').eq('id', String(orderId)).eq('order_number', String(eventId)).maybeSingle();
+  const { data: order, error } = await db.from('orders').select('*')
+    .eq('id', String(orderId)).eq('store_id', String(storeId)).eq('order_number', String(eventId)).maybeSingle();
   if (error || !order) return json({ error: 'Pedido não encontrado.' }, 404);
   if (!['confirmado', 'preparando', 'saiu_entrega', 'concluido'].includes(order.status)) {
     return json({ sent: false, skipped: true, reason: order.status === 'cancelado' ? 'order_cancelled' : 'order_not_confirmed' }, 409);
@@ -124,7 +136,7 @@ Deno.serve(async req => {
   const metaResponse = await fetch(`${supabaseUrl}/functions/v1/meta-conversions`, {
     method: 'POST', headers,
     body: JSON.stringify({
-      orderId: order.id, eventId: order.order_number, confirmedBy: 'crm_confirmation',
+      orderId: order.id, eventId: order.order_number, storeId: order.store_id, confirmedBy: 'crm_confirmation',
       forceRetry: Boolean(forceRetry), sourceUrl: sourceUrl || '',
       fbp: order.customer?.fbp || '', fbc: order.customer?.fbc || ''
     })

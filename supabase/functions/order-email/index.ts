@@ -247,12 +247,18 @@ function customerEmail(order: any, store: any, event: string) {
   };
 }
 
-async function authenticated(db: any, req: Request) {
+async function canManageStore(db: any, req: Request, storeId: string) {
   const authorization = req.headers.get('Authorization') || '';
   const token = authorization.replace(/^Bearer\s+/i, '');
   if (!token) return false;
   const { data, error } = await db.auth.getUser(token);
-  return !error && Boolean(data?.user);
+  if (error || !data?.user) return false;
+  const [{ data: platformAdmin }, { data: member }] = await Promise.all([
+    db.from('platform_admins').select('user_id').eq('user_id', data.user.id).maybeSingle(),
+    db.from('store_members').select('role').eq('store_id', storeId).eq('user_id', data.user.id)
+      .eq('active', true).in('role', ['owner', 'manager']).maybeSingle()
+  ]);
+  return Boolean(platformAdmin || member);
 }
 
 Deno.serve(async req => {
@@ -265,13 +271,15 @@ Deno.serve(async req => {
   const db = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
   const body = await req.json().catch(() => ({}));
   const event = String(body.event || 'created');
-  const isAdmin = await authenticated(db, req);
+  const storeId = String(body.storeId || '');
+  if (!storeId) return json({ error: 'storeId obrigatório.' }, 400);
+  const hasAdminAccess = await canManageStore(db, req, storeId);
 
   if (event === 'test') {
-    if (!isAdmin) return json({ error: 'Acesso administrativo obrigatório.' }, 401);
+    if (!hasAdminAccess) return json({ error: 'Acesso administrativo obrigatório.' }, 401);
     const [{ data: privateRow }, { data: settingsRow }] = await Promise.all([
-      db.from('private_settings').select('data').eq('id', 'integrations').maybeSingle(),
-      db.from('catalogs').select('data').eq('id', 'settings').maybeSingle()
+      db.from('private_settings').select('data').eq('store_id', storeId).eq('id', 'integrations').maybeSingle(),
+      db.from('catalogs').select('data').eq('store_id', storeId).eq('id', 'settings').maybeSingle()
     ]);
     const integration = privateRow?.data || {};
     const store = settingsRow?.data || {};
@@ -304,15 +312,15 @@ Deno.serve(async req => {
   if (!eventNames[event]) return json({ error: 'Evento de e-mail inválido.' }, 400);
   const orderId = String(body.orderId || '');
   if (!orderId) return json({ error: 'orderId obrigatório.' }, 400);
-  if (event !== 'created' && !isAdmin) return json({ error: 'Acesso administrativo obrigatório.' }, 401);
+  if (event !== 'created' && !hasAdminAccess) return json({ error: 'Acesso administrativo obrigatório.' }, 401);
 
   const [{ data: order, error: orderError }, { data: privateRow }, { data: settingsRow }] = await Promise.all([
-    db.from('orders').select('*').eq('id', orderId).maybeSingle(),
-    db.from('private_settings').select('data').eq('id', 'integrations').maybeSingle(),
-    db.from('catalogs').select('data').eq('id', 'settings').maybeSingle()
+    db.from('orders').select('*').eq('id', orderId).eq('store_id', storeId).maybeSingle(),
+    db.from('private_settings').select('data').eq('store_id', storeId).eq('id', 'integrations').maybeSingle(),
+    db.from('catalogs').select('data').eq('store_id', storeId).eq('id', 'settings').maybeSingle()
   ]);
   if (orderError || !order) return json({ error: 'Pedido não encontrado.' }, 404);
-  if (event === 'created' && !isAdmin && Date.now() - new Date(order.created_at).valueOf() > 30 * 60 * 1000) {
+  if (event === 'created' && !hasAdminAccess && Date.now() - new Date(order.created_at).valueOf() > 30 * 60 * 1000) {
     return json({ error: 'A notificação inicial deste pedido expirou.' }, 403);
   }
 
@@ -334,7 +342,7 @@ Deno.serve(async req => {
   const sourceUpdatedAt = order.updated_at || order.created_at;
   let eventId = crypto.randomUUID();
   const { data: inserted, error: insertError } = await db.from('order_webhook_events').insert({
-    id: eventId, order_id: order.id, event_type: eventNames[event], source_updated_at: sourceUpdatedAt
+    id: eventId, store_id: storeId, order_id: order.id, event_type: eventNames[event], source_updated_at: sourceUpdatedAt
   }).select('id').single();
   if (insertError?.code === '23505') {
     const { data: previous } = await db.from('order_webhook_events')
@@ -390,14 +398,14 @@ Deno.serve(async req => {
     const now = new Date().toISOString();
     await db.from('order_webhook_events').update({ status: 'enviado', response_status: response.status, error_message: '', updated_at: now }).eq('id', eventId);
     const statusField = event === 'created' ? 'store_email_status' : 'customer_email_status';
-    await db.from('orders').update({ [statusField]: 'enviado', email_error: '', last_email_at: now }).eq('id', order.id);
+    await db.from('orders').update({ [statusField]: 'enviado', email_error: '', last_email_at: now }).eq('id', order.id).eq('store_id', storeId);
     return json({ sent: true, configured: true, event: eventNames[event], eventId });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Falha ao chamar o Make.';
     const now = new Date().toISOString();
     await db.from('order_webhook_events').update({ status: 'erro', error_message: message, updated_at: now }).eq('id', eventId);
     const statusField = event === 'created' ? 'store_email_status' : 'customer_email_status';
-    await db.from('orders').update({ [statusField]: 'erro', email_error: message, last_email_at: now }).eq('id', order.id);
+    await db.from('orders').update({ [statusField]: 'erro', email_error: message, last_email_at: now }).eq('id', order.id).eq('store_id', storeId);
     return json({ sent: false, configured: true, error: message }, 502);
   } finally {
     clearTimeout(timeout);

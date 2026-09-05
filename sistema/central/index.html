@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Central Seu Food</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon/favicon.svg">
+  <link rel="stylesheet" href="central.css?v=20260905-foundation">
+</head>
+<body>
+  <section class="auth" id="auth-screen">
+    <form class="auth-card" id="login-form">
+      <div class="brand"><span>SF</span><div><b>Seu Food</b><small>ADMINISTRAÇÃO CENTRAL</small></div></div>
+      <h1>Administrar empresas</h1>
+      <p>Entre com o usuário principal do Supabase.</p>
+      <label>E-mail<input id="login-email" type="email" autocomplete="username" required></label>
+      <label>Senha<input id="login-password" type="password" autocomplete="current-password" required></label>
+      <p class="error" id="login-error" hidden></p>
+      <button type="submit">Entrar na central</button>
+    </form>
+  </section>
+
+  <div id="central-app" hidden>
+    <header class="topbar">
+      <div class="brand"><span>SF</span><div><b>Seu Food</b><small>CENTRAL MULTIEMPRESA</small></div></div>
+      <nav><a href="../admin/?loja=demonstracao">Abrir demonstração</a><button id="logout">Sair</button></nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div><small>GESTÃO DA PLATAFORMA</small><h1>Empresas e acessos</h1><p>Crie operações independentes sem compartilhar produtos, pedidos ou clientes.</p></div>
+        <button class="primary" id="open-new-store">+ Nova empresa</button>
+      </section>
+
+      <div class="notice" id="notice" hidden></div>
+
+      <section class="metrics">
+        <article><small>EMPRESAS</small><b id="metric-stores">0</b></article>
+        <article><small>ATIVAS</small><b id="metric-active">0</b></article>
+        <article><small>ACESSOS LIBERADOS</small><b id="metric-members">0</b></article>
+        <article><small>DOMÍNIOS</small><b id="metric-domains">0</b></article>
+      </section>
+
+      <section class="toolbar">
+        <label><span>Buscar empresa</span><input id="store-search" type="search" placeholder="Nome ou endereço"></label>
+        <label><span>Situação</span><select id="store-status-filter"><option value="all">Todas</option><option value="active">Ativas</option><option value="suspended">Suspensas</option><option value="archived">Arquivadas</option></select></label>
+      </section>
+
+      <section class="store-list" id="store-list"></section>
+    </main>
+  </div>
+
+  <div class="dialog" id="new-store-dialog" hidden>
+    <form id="new-store-form">
+      <header><div><small>NOVA OPERAÇÃO</small><h2>Criar empresa</h2></div><button type="button" data-close-dialog aria-label="Fechar">×</button></header>
+      <div class="dialog-body">
+        <label>Nome da empresa<input id="new-store-name" required placeholder="Ex.: Japa Pou"></label>
+        <label>Endereço no Seu Food<div class="slug-field"><span>seufood.com/</span><input id="new-store-slug" required placeholder="japapou"></div></label>
+        <label>E-mail do responsável <small>Opcional: o convite poderá ser copiado e enviado pelo WhatsApp.</small><input id="new-store-owner" type="email" placeholder="responsavel@empresa.com"></label>
+        <aside>O novo cardápio recebe as cores e os produtos da demonstração, mas fica independente. Contatos e integrações começam vazios. Plano, vencimento e limites também permanecem em branco.</aside>
+      </div>
+      <footer><button type="button" data-close-dialog>Cancelar</button><button class="primary" type="submit">Criar empresa</button></footer>
+    </form>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="../../assets/js/supabase-config.js"></script>
+  <script src="../../assets/js/supabase-store.js?v=20260905-multitenant-foundation"></script>
+  <script src="central.js?v=20260905-foundation"></script>
+</body>
+</html>

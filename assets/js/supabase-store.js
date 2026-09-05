@@ -3,7 +3,10 @@
   const configured = /^https:\/\/.+\.supabase\.co$/i.test(config.url || '') &&
     typeof config.anonKey === 'string' && config.anonKey.length > 40 &&
     !config.anonKey.includes('COLE_AQUI');
+  const DEMO_STORE_ID = '00000000-0000-0000-0000-000000000001';
+  const DEMO_STORE = { id: DEMO_STORE_ID, name: 'Seu Delivery - Demonstração', slug: 'demonstracao', is_demo: true };
   let client = null;
+  let currentStore = null;
 
   function getClient() {
     if (!configured) return null;
@@ -20,13 +23,107 @@
     if (error) throw new Error(error.message || fallback);
   }
 
+  function isLegacySchemaError(error) {
+    return Boolean(error && (
+      ['42P01', '42703', 'PGRST202', 'PGRST204'].includes(error.code) ||
+      /store_id|stores|resolve_public_store|schema cache|does not exist/i.test(error.message || '')
+    ));
+  }
+
+  function requestedStore() {
+    const params = new URLSearchParams(window.location.search);
+    const explicit = String(params.get('loja') || params.get('store') || '').trim().toLowerCase();
+    if (explicit) return { slug: explicit, hostname: '' };
+    const hostname = String(window.location.hostname || '').toLowerCase();
+    const ownDomain = /(^|\.)seufood\.com(?:\.br)?$/.test(hostname);
+    if (ownDomain) {
+      const labels = hostname.split('.');
+      const subdomain = labels.length > 2 ? labels[0] : '';
+      if (subdomain && !['www', 'app', 'admin', 'painel'].includes(subdomain)) return { slug: subdomain, hostname };
+      const pathSlug = window.location.pathname.split('/').filter(Boolean)[0] || 'demonstracao';
+      return { slug: pathSlug.toLowerCase(), hostname };
+    }
+    const customHostname = hostname &&
+      !hostname.endsWith('.github.io') &&
+      !hostname.endsWith('.workers.dev') &&
+      !['localhost', '127.0.0.1'].includes(hostname);
+    return customHostname ? { slug: '', hostname } : { slug: 'demonstracao', hostname: '' };
+  }
+
+  function setCurrentStore(store) {
+    currentStore = store ? { ...store } : null;
+    window.CARDAPIO_STORE = currentStore;
+    return currentStore;
+  }
+
+  async function resolveStore(force = false) {
+    if (currentStore && !force) return currentStore;
+    const db = getClient();
+    if (!db) return setCurrentStore({ ...DEMO_STORE, legacy: true });
+    const requested = requestedStore();
+    const { data, error } = await db.rpc('resolve_public_store', {
+      requested_slug: requested.slug || null,
+      requested_hostname: requested.hostname || null
+    }).maybeSingle();
+    if (error && isLegacySchemaError(error)) return setCurrentStore({ ...DEMO_STORE, legacy: true });
+    throwIfError(error, 'Não foi possível identificar esta empresa.');
+    if (!data) throw new Error('Este cardápio não existe ou está temporariamente indisponível.');
+    return setCurrentStore(data);
+  }
+
+  async function isPlatformAdmin() {
+    const db = getClient();
+    if (!db) return false;
+    const { data, error } = await db.rpc('is_platform_admin');
+    if (error && isLegacySchemaError(error)) return false;
+    throwIfError(error, 'Não foi possível verificar o acesso central.');
+    return data === true;
+  }
+
+  async function getAccessibleStores() {
+    const db = getClient();
+    if (!db) return [];
+    const { data: sessionData } = await db.auth.getSession();
+    const userId = sessionData?.session?.user?.id;
+    if (!userId) return [];
+    if (await isPlatformAdmin()) {
+      const { data, error } = await db.from('stores')
+        .select('id,name,slug,status,storefront_enabled,is_demo')
+        .order('is_demo', { ascending: false })
+        .order('created_at', { ascending: true });
+      if (error && isLegacySchemaError(error)) return [{ ...DEMO_STORE, status: 'active', storefront_enabled: true, role: 'owner', legacy: true }];
+      throwIfError(error, 'Não foi possível carregar as empresas.');
+      return (data || []).map(store => ({ ...store, role: 'platform_admin' }));
+    }
+    const { data, error } = await db.from('store_members')
+      .select('role,active,store:stores(id,name,slug,status,storefront_enabled,is_demo)')
+      .eq('user_id', userId)
+      .eq('active', true);
+    if (error && isLegacySchemaError(error)) return [{ ...DEMO_STORE, status: 'active', storefront_enabled: true, role: 'owner', legacy: true }];
+    throwIfError(error, 'Não foi possível carregar as empresas permitidas.');
+    return (data || []).filter(item => item.store).map(item => ({ ...item.store, role: item.role }));
+  }
+
+  function chooseStore(store) {
+    if (!store?.id) throw new Error('Empresa inválida.');
+    return setCurrentStore(store);
+  }
+
+  function requireStore() {
+    if (!currentStore?.id) throw new Error('Selecione uma empresa antes de continuar.');
+    return currentStore;
+  }
+
   async function loadCatalog() {
     const db = getClient();
     if (!db) return null;
-    const { data, error } = await db
+    const store = await resolveStore();
+    let query = db
       .from('catalogs')
       .select('id,data')
       .in('id', ['settings', 'categories', 'products']);
+    if (!store.legacy) query = query.eq('store_id', store.id);
+    const { data, error } = await query;
     throwIfError(error, 'Não foi possível carregar o cardápio.');
     const rows = Object.fromEntries((data || []).map(row => [row.id, row.data]));
     if (!rows.settings || !rows.categories || !rows.products) return null;
@@ -36,24 +133,28 @@
   async function saveCatalog(catalog) {
     const db = getClient();
     if (!db) throw new Error('Configure o Supabase antes de publicar.');
+    const store = requireStore();
     const updatedAt = new Date().toISOString();
-    const rows = [
+    let rows = [
       { id: 'settings', data: catalog.settings, updated_at: updatedAt },
       { id: 'categories', data: catalog.categories, updated_at: updatedAt },
       { id: 'products', data: catalog.products, updated_at: updatedAt }
     ];
-    const { error } = await db.from('catalogs').upsert(rows, { onConflict: 'id' });
+    if (!store.legacy) rows = rows.map(row => ({ ...row, store_id: store.id }));
+    const { error } = await db.from('catalogs').upsert(rows, { onConflict: store.legacy ? 'id' : 'store_id,id' });
     throwIfError(error, 'Não foi possível publicar as alterações.');
   }
 
   async function loadPrivateSettings() {
     const db = getClient();
     if (!db) return { makeWebhookEnabled: false, makeWebhookUrl: '', driverDeliveryEnabled: false, driverName: '', driverWhatsapp: '', available: false };
-    const { data, error } = await db
+    const store = requireStore();
+    let query = db
       .from('private_settings')
       .select('data')
-      .eq('id', 'integrations')
-      .maybeSingle();
+      .eq('id', 'integrations');
+    if (!store.legacy) query = query.eq('store_id', store.id);
+    const { data, error } = await query.maybeSingle();
     if (error) {
       if (error.code === '42P01' || /private_settings|schema cache/i.test(error.message || '')) {
         return { makeWebhookEnabled: false, makeWebhookUrl: '', driverDeliveryEnabled: false, driverName: '', driverWhatsapp: '', available: false };
@@ -66,6 +167,7 @@
   async function savePrivateSettings(settings) {
     const db = getClient();
     if (!db) throw new Error('Configure o Supabase antes de salvar integrações.');
+    const store = requireStore();
     const makeWebhookEnabled = Boolean(settings.makeWebhookEnabled);
     const makeWebhookUrl = String(settings.makeWebhookUrl || '').trim();
     const driverDeliveryEnabled = Boolean(settings.driverDeliveryEnabled);
@@ -96,7 +198,8 @@
       },
       updated_at: new Date().toISOString()
     };
-    const { error } = await db.from('private_settings').upsert(row, { onConflict: 'id' });
+    if (!store.legacy) row.store_id = store.id;
+    const { error } = await db.from('private_settings').upsert(row, { onConflict: store.legacy ? 'id' : 'store_id,id' });
     if (error && (error.code === '42P01' || /private_settings|schema cache/i.test(error.message || ''))) {
       throw new Error('Execute database/migrations/003_make_order_automation.sql no Supabase antes de salvar o webhook.');
     }
@@ -107,6 +210,7 @@
   async function createOrder(payload, orderNumber) {
     const db = getClient();
     if (!db) return false;
+    const store = await resolveStore();
     const row = {
       id: crypto.randomUUID(),
       order_number: orderNumber,
@@ -123,6 +227,7 @@
       status: 'novo',
       payment_status: 'pendente'
     };
+    if (!store.legacy) row.store_id = store.id;
     const { error } = await db.from('orders').insert(row);
     throwIfError(error, 'Não foi possível registrar o pedido.');
     return { id: row.id, order_number: row.order_number };
@@ -131,7 +236,7 @@
   async function notifyOrder(orderId) {
     const db = getClient();
     if (!db) throw new Error('Supabase não configurado.');
-    const { data, error } = await db.functions.invoke('whatsapp-order', { body: { orderId } });
+    const { data, error } = await db.functions.invoke('whatsapp-order', { body: { orderId, storeId: currentStore?.id || '' } });
     throwIfError(error, 'O pedido foi salvo, mas o WhatsApp automático não foi enviado.');
     return data || {};
   }
@@ -149,6 +254,7 @@
       body: {
         orderId,
         eventId,
+        storeId: currentStore?.id || '',
         sourceUrl: window.location.href,
         fbp: readCookie('_fbp'),
         fbc: readCookie('_fbc')
@@ -162,7 +268,7 @@
     const db = getClient();
     if (!db) throw new Error('Supabase não configurado.');
     const { data, error } = await db.functions.invoke('confirmed-conversions', {
-      body: { orderId, eventId, forceRetry, sourceUrl: window.location.href }
+      body: { orderId, eventId, storeId: currentStore?.id || '', forceRetry, sourceUrl: window.location.href }
     });
     throwIfError(error, 'O pedido foi confirmado, mas a conversão não pôde ser enviada.');
     return data || {};
@@ -171,12 +277,15 @@
   async function listConversionEvents() {
     const db = getClient();
     if (!db) return [];
-    const { data, error } = await db
+    const store = requireStore();
+    let query = db
       .from('order_webhook_events')
       .select('order_id,event_type,status,error_message,response_status,updated_at')
       .in('event_type', ['ga4.purchase', 'meta.purchase'])
       .order('updated_at', { ascending: false })
       .limit(2000);
+    if (!store.legacy) query = query.eq('store_id', store.id);
+    const { data, error } = await query;
     if (error && (error.code === '42P01' || /order_webhook_events|schema cache/i.test(error.message || ''))) return [];
     throwIfError(error, 'Não foi possível consultar o histórico das conversões.');
     return data || [];
@@ -185,7 +294,7 @@
   async function notifyOrderEmail(orderId, event = 'created') {
     const db = getClient();
     if (!db) throw new Error('Supabase não configurado.');
-    const { data, error } = await db.functions.invoke('order-email', { body: { orderId, event } });
+    const { data, error } = await db.functions.invoke('order-email', { body: { orderId, event, storeId: currentStore?.id || '' } });
     throwIfError(error, 'O pedido foi salvo, mas o e-mail automático não pôde ser solicitado.');
     return data || {};
   }
@@ -193,7 +302,7 @@
   async function testMakeWebhook() {
     const db = getClient();
     if (!db) throw new Error('Supabase não configurado.');
-    const { data, error } = await db.functions.invoke('order-email', { body: { event: 'test' } });
+    const { data, error } = await db.functions.invoke('order-email', { body: { event: 'test', storeId: currentStore?.id || '' } });
     throwIfError(error, 'Não foi possível testar o webhook do Make.');
     return data || {};
   }
@@ -201,7 +310,9 @@
   async function createCheckout(orderId, paymentMode = 'card') {
     const db = getClient();
     if (!db) throw new Error('Supabase não configurado.');
-    const { data, error } = await db.functions.invoke('create-checkout', { body: { orderId, paymentMode } });
+    const { data, error } = await db.functions.invoke('create-checkout', {
+      body: { orderId, paymentMode, storeId: currentStore?.id || '', returnUrl: window.location.href }
+    });
     if (error) {
       let message = error.message || 'O pedido foi salvo, mas o checkout não pôde ser criado.';
       try {
@@ -218,7 +329,7 @@
   async function getPaymentStatus(orderId, orderNumber) {
     const db = getClient();
     if (!db) throw new Error('Supabase não configurado.');
-    const { data, error } = await db.functions.invoke('payment-status', { body: { orderId, orderNumber } });
+    const { data, error } = await db.functions.invoke('payment-status', { body: { orderId, orderNumber, storeId: currentStore?.id || '' } });
     throwIfError(error, 'Não foi possível consultar o pagamento.');
     return data || {};
   }
@@ -226,11 +337,14 @@
   async function listOrders() {
     const db = getClient();
     if (!db) return [];
-    const { data, error } = await db
+    const store = requireStore();
+    let query = db
       .from('orders')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(1000);
+    if (!store.legacy) query = query.eq('store_id', store.id);
+    const { data, error } = await query;
     throwIfError(error, 'Não foi possível carregar os pedidos.');
     return (data || []).filter(order => {
       const mercadoPago = ['mercadopago_pix', 'mercadopago_card'].includes(order.payment_method);
@@ -240,10 +354,13 @@
 
   async function updateOrder(id, status, paymentStatus, emailEvents = []) {
     const db = getClient();
-    const { error } = await db
+    const store = requireStore();
+    let query = db
       .from('orders')
       .update({ status, payment_status: paymentStatus, updated_at: new Date().toISOString() })
       .eq('id', id);
+    if (!store.legacy) query = query.eq('store_id', store.id);
+    const { error } = await query;
     throwIfError(error, 'Não foi possível atualizar o pedido.');
     const notifications = [];
     for (const event of [...new Set(emailEvents)]) {
@@ -259,9 +376,12 @@
   async function deleteOrders(ids) {
     const db = getClient();
     if (!db) throw new Error('Supabase não configurado.');
+    const store = requireStore();
     const targets = [...new Set((ids || []).map(String).filter(Boolean))].slice(0, 1000);
     if (!targets.length) return;
-    const { error } = await db.from('orders').delete().in('id', targets);
+    let query = db.from('orders').delete().in('id', targets);
+    if (!store.legacy) query = query.eq('store_id', store.id);
+    const { error } = await query;
     if (error && /permission|policy|denied/i.test(error.message || '')) {
       throw new Error('Execute a migração 003 no Supabase para liberar a exclusão segura de pedidos.');
     }
@@ -309,21 +429,25 @@
     if (file.size > 12 * 1024 * 1024) throw new Error('A imagem original deve ter no máximo 12 MB.');
     const { data: sessionData } = await db.auth.getSession();
     if (!sessionData?.session) throw new Error('Sua sessão expirou. Entre novamente no painel.');
+    const store = requireStore();
     const optimized = await optimizeImage(file);
     if (optimized.size > 5 * 1024 * 1024) throw new Error('A imagem ficou maior que 5 MB mesmo após a otimização.');
     const safeFolder = String(folder || 'geral').replace(/[^a-z0-9_-]/gi, '').toLowerCase();
     const workerUrl = String(window.CARDAPIO_R2_CONFIG?.workerUrl || '').replace(/\/+$/, '');
     if (!/^https:\/\//i.test(workerUrl)) throw new Error('Configure o Worker do Cloudflare R2 antes de enviar imagens.');
 
+    const headers = {
+      Authorization: `Bearer ${sessionData.session.access_token}`,
+      'Content-Type': 'image/webp',
+      'X-Upload-Folder': safeFolder || 'geral'
+    };
+    // O Worker antigo continua funcionando enquanto a migração multiempresa não foi ativada.
+    if (!store.legacy) headers['X-Store-Id'] = store.id;
     let response;
     try {
       response = await fetch(`${workerUrl}/upload`, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${sessionData.session.access_token}`,
-          'Content-Type': 'image/webp',
-          'X-Upload-Folder': safeFolder || 'geral'
-        },
+        headers,
         body: optimized
       });
     } catch (_) {
@@ -360,6 +484,12 @@
   window.SupabaseStore = {
     configured,
     getClient,
+    requestedStore,
+    resolveStore,
+    chooseStore,
+    getCurrentStore: () => currentStore,
+    getAccessibleStores,
+    isPlatformAdmin,
     loadCatalog,
     saveCatalog,
     loadPrivateSettings,

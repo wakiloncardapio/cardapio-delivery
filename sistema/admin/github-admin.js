@@ -4,6 +4,7 @@
   const money = value => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value) || 0);
   const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
   let catalog = { settings: {}, categories: [], products: [] };
+  let accessibleStores = [];
   let privateSettings = { makeWebhookEnabled: false, makeWebhookUrl: '', driverDeliveryEnabled: false, driverName: '', driverWhatsapp: '', available: false };
   let orders = [];
   let conversionEvents = [];
@@ -74,7 +75,15 @@
     $('#auth-screen').hidden = true;
     $('#admin-app').hidden = false;
     try {
-      catalog = await SupabaseStore.loadCatalog() || await loadFallbackCatalog();
+      accessibleStores = await SupabaseStore.getAccessibleStores();
+      if (!accessibleStores.length) throw new Error('Seu acesso não está vinculado a nenhuma empresa ativa. Fale com o administrador do Seu Food.');
+      const requested = SupabaseStore.requestedStore();
+      const selectedStore = accessibleStores.find(store => store.slug === requested.slug) || accessibleStores[0];
+      SupabaseStore.chooseStore(selectedStore);
+      await renderStoreAccess(selectedStore);
+      catalog = await SupabaseStore.loadCatalog();
+      if (!catalog && selectedStore.legacy) catalog = await loadFallbackCatalog();
+      if (!catalog) throw new Error('O catálogo desta empresa ainda não foi criado. Fale com o administrador do Seu Food.');
       const migrated = ensureCatalogDefaults();
       if (migrated) await SupabaseStore.saveCatalog(catalog);
       [privateSettings, orders, conversionEvents] = await Promise.all([
@@ -89,6 +98,19 @@
     } catch (error) {
       notice(error.message, true);
     }
+  }
+
+  async function renderStoreAccess(store) {
+    const switcher = $('#store-switcher');
+    switcher.innerHTML = accessibleStores.map(item =>
+      `<option value="${esc(item.slug)}" ${item.id === store.id ? 'selected' : ''}>${esc(item.name)}</option>`
+    ).join('');
+    $('#store-switcher-field').hidden = accessibleStores.length < 2;
+    $('#admin-store-caption').textContent = `Gerencie produtos, pedidos e configurações de ${store.name}.`;
+    const publicUrl = new URL('../../', window.location.href);
+    publicUrl.searchParams.set('loja', store.slug);
+    $('#view-store').href = publicUrl.href;
+    $('#central-admin-link').hidden = !(await SupabaseStore.isPlatformAdmin());
   }
 
   function showLoginError(text) {
@@ -1583,6 +1605,11 @@
   }
 
   function bind() {
+    $('#store-switcher').onchange = event => {
+      const url = new URL(window.location.href);
+      url.searchParams.set('loja', event.target.value);
+      window.location.href = url.href;
+    };
     $('#login-form').addEventListener('submit', async event => {
       event.preventDefault();
       $('#login-error').hidden = true;

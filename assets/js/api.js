@@ -14,14 +14,18 @@
   }
 
   async function loadCatalog() {
+    const requested = window.SupabaseStore?.requestedStore?.() || { slug: 'demonstracao', hostname: '' };
+    const demonstration = requested.slug === 'demonstracao' && !requested.hostname;
     if (window.SupabaseStore?.configured) {
       try {
         const remote = await window.SupabaseStore.loadCatalog();
         if (remote) return remote;
       } catch (error) {
+        if (!demonstration) throw error;
         console.warn('Supabase indisponível; usando catálogo publicado no GitHub.', error);
       }
     }
+    if (!demonstration) throw new Error('O catálogo desta empresa ainda não foi publicado.');
     return loadStaticCatalog();
   }
 

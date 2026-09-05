@@ -33,12 +33,12 @@ Deno.serve(async req => {
   const recipient = Deno.env.get('META_ORDER_RECIPIENT');
   const version = Deno.env.get('META_API_VERSION') || 'v23.0';
   if (!supabaseUrl || !serviceKey || !token || !phoneId || !recipient) return json({ error: 'Secrets da integração incompletos.' }, 503);
-  const { orderId } = await req.json().catch(() => ({}));
-  if (!orderId) return json({ error: 'orderId obrigatório.' }, 400);
+  const { orderId, storeId } = await req.json().catch(() => ({}));
+  if (!orderId || !storeId) return json({ error: 'orderId e storeId são obrigatórios.' }, 400);
   const db = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
   const [{ data: order, error }, { data: settingsRow }] = await Promise.all([
-    db.from('orders').select('*').eq('id', orderId).single(),
-    db.from('catalogs').select('data').eq('id', 'settings').maybeSingle()
+    db.from('orders').select('*').eq('id', orderId).eq('store_id', storeId).single(),
+    db.from('catalogs').select('data').eq('store_id', storeId).eq('id', 'settings').maybeSingle()
   ]);
   if (error || !order) return json({ error: 'Pedido não encontrado.' }, 404);
   const storeName = String(settingsRow?.data?.establishmentName || settingsRow?.data?.storeName || 'Seu Delivery');
@@ -50,9 +50,9 @@ Deno.serve(async req => {
   const result = await response.json().catch(() => ({}));
   if (!response.ok) {
     const message = result?.error?.message || 'Falha ao enviar pela Meta.';
-    await db.from('orders').update({ notification_status: 'erro', notification_error: message }).eq('id', orderId);
+    await db.from('orders').update({ notification_status: 'erro', notification_error: message }).eq('id', orderId).eq('store_id', storeId);
     return json({ error: message }, response.status);
   }
-  await db.from('orders').update({ notification_status: 'enviado', notification_error: '', notified_at: new Date().toISOString() }).eq('id', orderId);
+  await db.from('orders').update({ notification_status: 'enviado', notification_error: '', notified_at: new Date().toISOString() }).eq('id', orderId).eq('store_id', storeId);
   return json({ sent: true, messageId: result?.messages?.[0]?.id || '' });
 });

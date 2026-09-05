@@ -93,8 +93,9 @@ Deno.serve(async req => {
   const body = await req.json().catch(() => ({}));
   const orderId = String(body.orderId || '');
   const eventId = String(body.eventId || '');
+  const storeId = String(body.storeId || '');
   const forceRetry = body.forceRetry === true;
-  if (!orderId || !eventId) return json({ error: 'orderId e eventId são obrigatórios.' }, 400);
+  if (!orderId || !eventId || !storeId) return json({ error: 'orderId, eventId e storeId são obrigatórios.' }, 400);
 
   const db = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
   if (forceRetry) {
@@ -103,9 +104,16 @@ Deno.serve(async req => {
     if (!internalService) {
       const { data: authData, error: authError } = await db.auth.getUser(token);
       if (authError || !authData.user) return json({ error: 'Apenas o administrador pode reenviar conversões.' }, 401);
+      const [{ data: platformAdmin }, { data: member }] = await Promise.all([
+        db.from('platform_admins').select('user_id').eq('user_id', authData.user.id).maybeSingle(),
+        db.from('store_members').select('role').eq('store_id', storeId).eq('user_id', authData.user.id)
+          .eq('active', true).in('role', ['owner', 'manager']).maybeSingle()
+      ]);
+      if (!platformAdmin && !member) return json({ error: 'Você não gerencia esta empresa.' }, 403);
     }
   }
-  const { data: order, error: orderError } = await db.from('orders').select('*').eq('id', orderId).single();
+  const { data: order, error: orderError } = await db.from('orders').select('*')
+    .eq('id', orderId).eq('store_id', storeId).single();
   if (orderError || !order) return json({ error: 'Pedido não encontrado.' }, 404);
   if (eventId !== order.order_number) return json({ error: 'Identificação do evento inválida.' }, 400);
   if (!['confirmado', 'preparando', 'saiu_entrega', 'concluido'].includes(order.status)) {
@@ -145,6 +153,7 @@ Deno.serve(async req => {
     auditId = crypto.randomUUID();
     const { error: auditError } = await db.from('order_webhook_events').insert({
       id: auditId,
+      store_id: storeId,
       order_id: order.id,
       event_type: eventType,
       source_updated_at: order.created_at,

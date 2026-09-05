@@ -44,7 +44,8 @@ async function sendGa4Purchase(db: any, order: any) {
   let measurementId = Deno.env.get('GA4_MEASUREMENT_ID') || '';
   const apiSecret = Deno.env.get('GA4_API_SECRET') || '';
   if (!measurementId) {
-    const { data: settings } = await db.from('catalogs').select('data').eq('id', 'settings').maybeSingle();
+    const { data: settings } = await db.from('catalogs').select('data')
+      .eq('store_id', order.store_id).eq('id', 'settings').maybeSingle();
     measurementId = String(settings?.data?.ga4Id || '');
   }
   if (!/^G-[A-Z0-9]+$/i.test(measurementId) || !apiSecret) {
@@ -68,6 +69,7 @@ async function sendGa4Purchase(db: any, order: any) {
   } else {
     const { error: auditError } = await db.from('order_webhook_events').insert({
       id: auditId,
+      store_id: order.store_id,
       order_id: order.id,
       event_type: eventType,
       source_updated_at: order.created_at,
@@ -186,7 +188,7 @@ Deno.serve(async req => {
     payment_provider: 'mercadopago',
     payment_reference: String(mercadoPagoResource.id || dataId),
     updated_at: paidAt
-  }).eq('id', order.id);
+  }).eq('id', order.id).eq('store_id', order.store_id);
 
   let notifications: Record<string, unknown> = {};
   if (becamePaid) {
@@ -197,10 +199,10 @@ Deno.serve(async req => {
     };
     const [emailResponse, whatsappResponse] = await Promise.all([
       fetch(`${supabaseUrl}/functions/v1/order-email`, {
-        method: 'POST', headers: functionHeaders, body: JSON.stringify({ orderId: order.id, event: 'created' })
+        method: 'POST', headers: functionHeaders, body: JSON.stringify({ orderId: order.id, storeId: order.store_id, event: 'created' })
       }),
       fetch(`${supabaseUrl}/functions/v1/whatsapp-order`, {
-        method: 'POST', headers: functionHeaders, body: JSON.stringify({ orderId: order.id })
+        method: 'POST', headers: functionHeaders, body: JSON.stringify({ orderId: order.id, storeId: order.store_id })
       })
     ]);
     notifications = {

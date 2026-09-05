@@ -6,14 +6,39 @@ O GitHub Pages publica somente a interface. Tokens da Meta e de gateways **nunca
 
 O painel envia imagens otimizadas ao Worker configurado em `assets/js/r2-config.js`. O Worker valida a sessão do administrador no Supabase, grava o arquivo no binding R2 `IMAGES` e devolve somente a URL pública. Tokens e chaves privadas do R2 não devem ser colocados no GitHub.
 
+Na versão multiempresa, use o código de `cloudflare/r2-upload-worker.js`. Ele também verifica se a pessoa pertence à empresa informada e grava cada arquivo dentro da pasta `<store_id>/...`. No Worker, mantenha o binding `IMAGES` e configure:
+
+| Variável | Valor |
+|---|---|
+| `SUPABASE_URL` | URL do projeto Supabase |
+| `SUPABASE_ANON_KEY` | Chave pública/publicável do Supabase |
+| `R2_PUBLIC_URL` | URL pública do bucket, sem barra no final |
+
+Depois de atualizar o código, publique o Worker. Não coloque a `service_role` no Cloudflare.
+
 ## 1. Preparar o banco
 
 Execute, nesta ordem, no SQL Editor do Supabase:
 
 1. `database/migrations/002_integrations.sql`
 2. `database/migrations/003_make_order_automation.sql`
+3. `database/migrations/004_multi_tenant.sql`
 
-A migração 003 cria as configurações privadas, o histórico dos webhooks, os indicadores de envio de e-mail e a permissão administrativa para excluir pedidos.
+A migração 003 cria as integrações e o histórico. A migração 004 preserva tudo na loja de demonstração, cria empresas, membros, páginas, domínios e auditoria, e troca as regras abertas por isolamento por empresa.
+
+Depois da migração 004, execute em **GitHub → Actions** o workflow **Ativar base multiempresa**. Ele publica novamente todas as Edge Functions já preparadas para receber `storeId` e publica a função protegida `platform-admin`.
+
+Em **Supabase → Authentication → URL Configuration**, adicione a URL `/sistema/convite/` do site à lista de redirects permitidos. A Central gera um link de convite para você copiar e enviar; o cadastro público continua desativado.
+
+## Administração central
+
+Acesse `/sistema/central/` com o usuário principal. A Central permite:
+
+- criar uma empresa copiando a demonstração para um catálogo independente;
+- liberar, suspender ou reativar usuários por empresa;
+- abrir o painel e o cardápio de cada operação;
+- registrar domínio próprio ou subdomínio para ativação futura;
+- manter plano, vencimento e limites vazios, sem bloqueios nesta demonstração.
 
 ## 2. WhatsApp Cloud API da Meta
 

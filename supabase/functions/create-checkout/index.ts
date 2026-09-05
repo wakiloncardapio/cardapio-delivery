@@ -55,7 +55,8 @@ Deno.serve(async req => {
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
   const accessToken = Deno.env.get('MERCADO_PAGO_ACCESS_TOKEN') || '';
   const siteUrlValue = Deno.env.get('SITE_URL') || req.headers.get('origin') || '';
-  const { orderId, paymentMode = 'card' } = await req.json().catch(() => ({}));
+  const body = await req.json().catch(() => ({}));
+  const { orderId, storeId, paymentMode = 'card', returnUrl: requestedReturnUrl = '' } = body;
   if (!supabaseUrl || !serviceKey) return json({ error: 'Supabase incompleto.' }, 503);
   if (!accessToken) return json({ error: 'Mercado Pago ainda não configurado.' }, 503);
   let siteUrl = '';
@@ -66,13 +67,30 @@ Deno.serve(async req => {
   } catch (_) {
     return json({ error: 'Configure SITE_URL com o endereço público do cardápio.' }, 503);
   }
-  if (!orderId) return json({ error: 'orderId obrigatório.' }, 400);
+  if (!orderId || !storeId) return json({ error: 'orderId e storeId são obrigatórios.' }, 400);
   if (!['card', 'pix'].includes(paymentMode)) return json({ error: 'Forma de pagamento inválida.' }, 400);
 
   const db = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
-  const { data: order, error } = await db.from('orders').select('*').eq('id', orderId).single();
+  const { data: order, error } = await db.from('orders').select('*').eq('id', orderId).eq('store_id', storeId).single();
   if (error || !order) return json({ error: 'Pedido não encontrado.' }, 404);
   if (order.payment_status === 'pago') return json({ error: 'Este pedido já foi pago.' }, 409);
+
+  let checkoutReturnUrl = new URL(siteUrl);
+  if (requestedReturnUrl) {
+    try {
+      const candidate = new URL(String(requestedReturnUrl));
+      const configuredOrigin = new URL(siteUrl).origin;
+      let allowed = candidate.protocol === 'https:' && candidate.origin === configuredOrigin;
+      if (!allowed) {
+        const { data: domain } = await db.from('store_domains').select('id')
+          .eq('store_id', storeId).eq('hostname', candidate.hostname.toLowerCase()).eq('status', 'active').maybeSingle();
+        allowed = Boolean(domain);
+      }
+      if (allowed) checkoutReturnUrl = candidate;
+    } catch (_) {}
+  }
+  checkoutReturnUrl.hash = '';
+  checkoutReturnUrl.searchParams.set('pagamento', '');
 
   const customer = order.customer || {};
   const email = String(customer.email || '').trim();
@@ -87,7 +105,7 @@ Deno.serve(async req => {
   }
 
   const notificationUrl = `${supabaseUrl}/functions/v1/mercadopago-webhook?source_news=webhooks`;
-  const returnUrl = new URL('?pagamento=', siteUrl).href;
+  const returnUrl = checkoutReturnUrl.href;
   const idempotencyKey = paymentMode === 'card'
     ? order.id
     : `${String(order.id).slice(0, -1)}${String(order.id).endsWith('0') ? '1' : '0'}`;
@@ -128,7 +146,7 @@ Deno.serve(async req => {
       payment_reference: details.reference,
       checkout_url: details.ticketUrl,
       updated_at: new Date().toISOString()
-    }).eq('id', order.id);
+    }).eq('id', order.id).eq('store_id', storeId);
     return json({
       paymentMode: 'pix',
       reference: details.reference,
@@ -213,7 +231,7 @@ Deno.serve(async req => {
     payment_reference: details.reference,
     checkout_url: checkoutUrl,
     updated_at: new Date().toISOString()
-  }).eq('id', order.id);
+  }).eq('id', order.id).eq('store_id', storeId);
 
   return json({
     paymentMode,

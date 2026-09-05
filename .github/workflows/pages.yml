@@ -26,11 +26,13 @@ jobs:
 
       - name: Preparar versão pública
         run: |
-          mkdir -p _site/sistema/admin
+          mkdir -p _site/sistema/admin _site/sistema/central _site/sistema/convite
           cp index.html politicas.html manifest.json robots.txt sitemap.xml _site/
           cp -R assets data _site/
           rm -rf _site/data/orders
           cp sistema/admin/index.html sistema/admin/admin.css sistema/admin/github-admin.js _site/sistema/admin/
+          cp sistema/central/index.html sistema/central/central.css sistema/central/central.js _site/sistema/central/
+          cp sistema/convite/index.html sistema/convite/invite.js _site/sistema/convite/
           touch _site/.nojekyll
 
       - name: Configurar Pages

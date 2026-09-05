@@ -15,14 +15,15 @@ Deno.serve(async req => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-  const { orderId, orderNumber } = await req.json().catch(() => ({}));
+  const { orderId, orderNumber, storeId } = await req.json().catch(() => ({}));
   if (!supabaseUrl || !serviceKey) return json({ error: 'Supabase incompleto.' }, 503);
-  if (!orderId || !orderNumber) return json({ error: 'Pedido inválido.' }, 400);
+  if (!orderId || !orderNumber || !storeId) return json({ error: 'Pedido inválido.' }, 400);
 
   const db = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
   const { data: order, error } = await db.from('orders')
     .select('id,order_number,payment_status,payment_provider,updated_at')
     .eq('id', String(orderId))
+    .eq('store_id', String(storeId))
     .eq('order_number', String(orderNumber))
     .maybeSingle();
   if (error || !order) return json({ error: 'Pedido não encontrado.' }, 404);

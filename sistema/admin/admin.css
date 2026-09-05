@@ -510,3 +510,11 @@ body.dialog-open{overflow:hidden}
   .product-category-grid .product-thumb{width:76px;height:76px}
   .product-category-grid .product-admin-info h3{font-size:15px}
 }
+
+/* Seleção de empresa no painel multiempresa. */
+.admin-head-actions{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+.admin-head-actions label{min-width:190px;display:grid;gap:4px;color:#756978;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
+.admin-head-actions select{min-height:42px;padding:8px 11px;border:1px solid var(--line,#e3d9e5);border-radius:9px;background:#fff;color:var(--ink,#28172e);font-weight:800;text-transform:none;letter-spacing:0}
+.admin-head-actions .central-link{min-height:42px;padding:12px 14px;border:1px solid #620853;border-radius:9px;color:#620853;font-size:10px;font-weight:900}
+.admin-head-actions>button{min-height:42px;padding:12px 16px;border:0;border-radius:10px;background:#620853;color:#fff;font-weight:900}
+@media(max-width:680px){.admin-head-actions{width:100%;display:grid;grid-template-columns:1fr}.admin-head-actions label{min-width:0}.admin-head-actions .central-link,.admin-head-actions>button{width:100%;text-align:center}}
