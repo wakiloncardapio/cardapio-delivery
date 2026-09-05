@@ -326,6 +326,60 @@
     return data || {};
   }
 
+  function analyticsSessionId() {
+    const key = 'seufood_analytics_session';
+    let value = '';
+    try { value = sessionStorage.getItem(key) || ''; } catch (_) {}
+    if (!value) {
+      value = crypto.randomUUID();
+      try { sessionStorage.setItem(key, value); } catch (_) {}
+    }
+    return value;
+  }
+
+  async function trackAnalyticsEvent(eventName, items = [], extra = {}) {
+    const db = getClient();
+    const store = currentStore || await resolveStore();
+    if (!db || !store?.id || store.legacy) return { received: false };
+    const { data, error } = await db.functions.invoke('analytics-event', {
+      body: {
+        storeId: store.id,
+        sessionId: analyticsSessionId(),
+        eventName,
+        orderId: extra.orderId || null,
+        value: Number(extra.value || 0),
+        items,
+        attribution: extra.attribution || {},
+        consent: extra.consent || {}
+      }
+    });
+    if (error && !/analytics-event|not found|404/i.test(error.message || '')) throw error;
+    return data || { received: false };
+  }
+
+  async function paymentSettings(action = 'get', values = {}) {
+    const db = getClient();
+    const store = requireStore();
+    if (!db || store.legacy) return { available: false, connected: false, enabled: false };
+    const { data, error } = await db.functions.invoke('payment-settings', {
+      body: { action, storeId: store.id, ...values }
+    });
+    if (error) {
+      let message = error.message || 'Não foi possível acessar as credenciais de pagamento.';
+      try {
+        const detail = await error.context?.clone?.().json();
+        if (detail?.error) message = detail.error;
+      } catch (_) {}
+      throw new Error(message);
+    }
+    if (data?.error) throw new Error(data.error);
+    return data || {};
+  }
+
+  const loadPaymentSettings = () => paymentSettings('get');
+  const savePaymentSettings = values => paymentSettings('save', values);
+  const disconnectPaymentSettings = () => paymentSettings('disconnect');
+
   async function getPaymentStatus(orderId, orderNumber) {
     const db = getClient();
     if (!db) throw new Error('Supabase não configurado.');
@@ -508,6 +562,10 @@
     notifyOrderEmail,
     testMakeWebhook,
     createCheckout,
+    trackAnalyticsEvent,
+    loadPaymentSettings,
+    savePaymentSettings,
+    disconnectPaymentSettings,
     listOrders,
     updateOrder,
     deleteOrder,

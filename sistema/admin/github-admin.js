@@ -6,6 +6,7 @@
   let catalog = { settings: {}, categories: [], products: [] };
   let accessibleStores = [];
   let privateSettings = { makeWebhookEnabled: false, makeWebhookUrl: '', driverDeliveryEnabled: false, driverName: '', driverWhatsapp: '', available: false };
+  let paymentSettings = { available: false, connected: false, enabled: false, applePayStatus: 'provider_required' };
   let orders = [];
   let conversionEvents = [];
   const sendingConversionOrderIds = new Set();
@@ -86,8 +87,9 @@
       if (!catalog) throw new Error('O catálogo desta empresa ainda não foi criado. Fale com o administrador do Seu Food.');
       const migrated = ensureCatalogDefaults();
       if (migrated) await SupabaseStore.saveCatalog(catalog);
-      [privateSettings, orders, conversionEvents] = await Promise.all([
+      [privateSettings, paymentSettings, orders, conversionEvents] = await Promise.all([
         SupabaseStore.loadPrivateSettings(),
+        SupabaseStore.loadPaymentSettings().catch(() => ({ available: false, connected: false, enabled: false, applePayStatus: 'provider_required' })),
         SupabaseStore.listOrders(),
         SupabaseStore.listConversionEvents()
       ]);
@@ -125,6 +127,73 @@
     element.className = `notice ${error ? 'error' : 'ok'}`;
     element.hidden = false;
     setTimeout(() => { element.hidden = true; }, 5000);
+  }
+
+  function validThemeColor(value, fallback) {
+    const color = String(value || '').trim();
+    return /^#[0-9a-f]{6}$/i.test(color) ? color.toLowerCase() : fallback;
+  }
+
+  function renderPaymentConnection() {
+    const status = $('#payment-connection-status');
+    if (!status) return;
+    status.className = 'payment-connection';
+    if (!paymentSettings.available) {
+      status.textContent = 'Execute a migração 005 e publique a função payment-settings para liberar esta área.';
+      status.classList.add('error');
+    } else if (paymentSettings.connected) {
+      status.textContent = `✓ Conta ${paymentSettings.accountEmail || paymentSettings.accountId || 'Mercado Pago'} conectada em ${paymentSettings.liveMode ? 'produção' : 'teste'}.`;
+      status.classList.add('connected');
+    } else {
+      status.textContent = 'Nenhuma conta Mercado Pago conectada para esta empresa.';
+    }
+    $('#mercadopago-public-key').value = paymentSettings.publicKey || '';
+    $('#mercadopago-access-token').value = '';
+    $('#mercadopago-webhook-secret').value = '';
+    $('#disconnect-payment-connection').hidden = !paymentSettings.connected;
+    $('#apple-pay-status').textContent = paymentSettings.applePayStatus === 'ready'
+      ? 'Provedor e domínio validados; a ativação pode ser concluída.'
+      : 'Aguardando provedor compatível, Merchant ID, certificados e domínio verificado.';
+  }
+
+  async function savePaymentConnection() {
+    const button = $('#save-payment-connection');
+    const accessToken = $('#mercadopago-access-token').value.trim();
+    if (!accessToken) return notice('Cole o Access Token para testar e salvar a conexão.', true);
+    button.disabled = true;
+    button.textContent = 'Testando conexão...';
+    try {
+      paymentSettings = await SupabaseStore.savePaymentSettings({
+        accessToken,
+        publicKey: $('#mercadopago-public-key').value.trim(),
+        webhookSecret: $('#mercadopago-webhook-secret').value.trim(),
+        enabled: true
+      });
+      catalog.settings.gatewayProvider = 'mercadopago';
+      catalog.settings.gatewayEnabled = $('#gateway-enabled').checked;
+      $('#gateway-provider').value = 'mercadopago';
+      await SupabaseStore.saveCatalog(catalog);
+      renderPaymentConnection();
+      notice('Mercado Pago conectado com segurança para esta empresa.');
+    } catch (error) { notice(error.message, true); }
+    finally { button.disabled = false; button.textContent = 'Salvar e testar'; }
+  }
+
+  async function disconnectPaymentConnection() {
+    if (!window.confirm('Desconectar o Mercado Pago desta empresa? O checkout automático será desativado.')) return;
+    const button = $('#disconnect-payment-connection');
+    button.disabled = true;
+    try {
+      paymentSettings = await SupabaseStore.disconnectPaymentSettings();
+      catalog.settings.gatewayEnabled = false;
+      catalog.settings.gatewayProvider = 'none';
+      $('#gateway-enabled').checked = false;
+      $('#gateway-provider').value = 'none';
+      await SupabaseStore.saveCatalog(catalog);
+      renderPaymentConnection();
+      notice('Mercado Pago desconectado desta empresa.');
+    } catch (error) { notice(error.message, true); }
+    finally { button.disabled = false; }
   }
 
   function preview(url) {
@@ -187,9 +256,13 @@
     if (typeof settings.whatsappCloudEnabled !== 'boolean') set('whatsappCloudEnabled', false);
     if (typeof settings.gatewayEnabled !== 'boolean') set('gatewayEnabled', false);
     if (!settings.gatewayProvider) set('gatewayProvider', 'none');
-    set('primaryColor', '#620853');
-    set('accentColor', '#fcd307');
-    set('brandBrightColor', '#620853');
+    if (!/^#[0-9a-f]{6}$/i.test(settings.primaryColor || '')) set('primaryColor', '#620853');
+    if (!/^#[0-9a-f]{6}$/i.test(settings.accentColor || '')) set('accentColor', '#fcd307');
+    if (!/^#[0-9a-f]{6}$/i.test(settings.brandBrightColor || '')) set('brandBrightColor', '#620853');
+    if (!['arial','inter','trebuchet','poppins'].includes(settings.bodyFont)) set('bodyFont', 'arial');
+    if (!['georgia','arial','inter','poppins'].includes(settings.headingFont)) set('headingFont', 'georgia');
+    if (!['clean','shine','glass','neon'].includes(settings.cardEffect)) set('cardEffect', 'clean');
+    if (typeof settings.customCss !== 'string') set('customCss', '');
     if (typeof settings.autoOpenWhatsApp !== 'boolean') set('autoOpenWhatsApp', false);
     if (typeof settings.orderRedirectEnabled !== 'boolean') set('orderRedirectEnabled', false);
     if (typeof settings.orderRedirectUrl !== 'string') set('orderRedirectUrl', '');
@@ -267,6 +340,16 @@
     $('#whatsapp-cloud-enabled').checked = Boolean(settings.whatsappCloudEnabled);
     $('#auto-open-whatsapp').checked = settings.autoOpenWhatsApp === true;
     $('#gateway-enabled').checked = Boolean(settings.gatewayEnabled);
+    $('#primary-color').value = validThemeColor(settings.primaryColor, '#620853');
+    $('#primary-text').value = validThemeColor(settings.primaryColor, '#620853');
+    $('#accent-color').value = validThemeColor(settings.accentColor, '#fcd307');
+    $('#accent-text').value = validThemeColor(settings.accentColor, '#fcd307');
+    $('#brand-bright-color').value = validThemeColor(settings.brandBrightColor, '#620853');
+    $('#brand-bright-text').value = validThemeColor(settings.brandBrightColor, '#620853');
+    $('#body-font').value = settings.bodyFont || 'arial';
+    $('#heading-font').value = settings.headingFont || 'georgia';
+    $('#card-effect').value = settings.cardEffect || 'clean';
+    $('#custom-css').value = settings.customCss || '';
     $('#order-redirect-enabled').checked = Boolean(settings.orderRedirectEnabled);
     $('#daily-offer-enabled').checked = Boolean(settings.dailyOffer.enabled);
     $('#daily-offer-title').value = settings.dailyOffer.title || '';
@@ -281,6 +364,7 @@
     $('#driver-name').value = privateSettings.driverName || '';
     $('#driver-whatsapp').value = privateSettings.driverWhatsapp || '';
     updateDriverSettingsVisibility();
+    renderPaymentConnection();
     updateMakeWebhookStatus(privateSettings.available
       ? 'Webhook protegido pronto para configuração.'
       : 'Execute a migração 003 no Supabase para liberar esta integração.', !privateSettings.available);
@@ -319,9 +403,13 @@
     settings.blockedPostalCodes = $('#blocked-postal-codes').value.split(/[\n,;]+/).map(value => value.trim()).filter(Boolean);
     settings.statusMode = $('#store-status-mode').value;
     settings.open = settings.statusMode !== 'closed';
-    settings.primaryColor = '#620853';
-    settings.accentColor = '#fcd307';
-    settings.brandBrightColor = '#620853';
+    settings.primaryColor = validThemeColor($('#primary-text').value, '#620853');
+    settings.accentColor = validThemeColor($('#accent-text').value, '#fcd307');
+    settings.brandBrightColor = validThemeColor($('#brand-bright-text').value, settings.primaryColor);
+    settings.bodyFont = $('#body-font').value;
+    settings.headingFont = $('#heading-font').value;
+    settings.cardEffect = $('#card-effect').value;
+    settings.customCss = $('#custom-css').value.trim().slice(0, 8000);
     settings.whatsappCloudEnabled = $('#whatsapp-cloud-enabled').checked;
     settings.autoOpenWhatsApp = $('#auto-open-whatsapp').checked;
     settings.gatewayEnabled = $('#gateway-enabled').checked;
@@ -1659,7 +1747,54 @@
     }
   }
 
+  const imageTriggerSelector = '.upload-preview,.favicon-admin-preview,.offer-admin-preview,.product-photo,.category-thumb,.info-icon-preview,.notification-image,.option-thumb';
+
+  function imageToolsHolder(trigger) {
+    if (trigger.matches('.product-photo')) return trigger.closest('.product-media');
+    if (trigger.matches('.category-thumb')) return trigger.closest('.category-row');
+    if (trigger.matches('.info-icon-preview')) return trigger.closest('.info-icon-row');
+    if (trigger.matches('.notification-image')) return trigger.closest('.notification-editor');
+    if (trigger.matches('.option-thumb')) return trigger.closest('.option-row');
+    return trigger.closest('.card');
+  }
+
+  function closeImageTools(except = null) {
+    $$('.image-tools-open').forEach(holder => {
+      if (holder !== except) holder.classList.remove('image-tools-open');
+    });
+  }
+
+  function toggleImageTools(trigger) {
+    const holder = imageToolsHolder(trigger);
+    if (!holder) return;
+    const opening = !holder.classList.contains('image-tools-open');
+    closeImageTools(opening ? holder : null);
+    holder.classList.toggle('image-tools-open', opening);
+    trigger.setAttribute('aria-expanded', String(opening));
+  }
+
+  function setupImageToolMenus() {
+    document.addEventListener('click', event => {
+      const trigger = event.target.closest(imageTriggerSelector);
+      if (trigger) {
+        event.stopPropagation();
+        toggleImageTools(trigger);
+        return;
+      }
+      if (!event.target.closest('.image-upload-actions,.category-image-actions,.notification-image-actions,.option-image-actions,.product-media>label.upload,#remove-product-image')) closeImageTools();
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape') closeImageTools();
+      if (!['Enter', ' '].includes(event.key)) return;
+      const trigger = event.target.closest(imageTriggerSelector);
+      if (!trigger) return;
+      event.preventDefault();
+      toggleImageTools(trigger);
+    });
+  }
+
   function bind() {
+    setupImageToolMenus();
     $('#store-switcher').onchange = event => {
       const url = new URL(window.location.href);
       url.searchParams.set('loja', event.target.value);
@@ -1695,6 +1830,16 @@
     setupSettingsAccordions();
     $('#driver-delivery-enabled').onchange = updateDriverSettingsVisibility;
     $('#save-all').onclick = saveAll;
+    $('#save-payment-connection').onclick = savePaymentConnection;
+    $('#disconnect-payment-connection').onclick = disconnectPaymentConnection;
+    ['primary','accent','brand-bright'].forEach(name => {
+      const color = $(`#${name}-color`);
+      const text = $(`#${name}-text`);
+      color.oninput = () => { text.value = color.value.toLowerCase(); };
+      text.oninput = () => {
+        if (/^#[0-9a-f]{6}$/i.test(text.value.trim())) color.value = text.value.trim();
+      };
+    });
     $('#refresh-orders').onclick = () => refreshOrders(true);
     $('#customer-search').oninput = event => { customerQuery = event.target.value.trim(); renderCustomers(); };
     $('#customer-consent-filter').onchange = event => { customerConsentFilter = event.target.value; renderCustomers(); };

@@ -6,8 +6,9 @@
   <meta name="robots" content="noindex,nofollow">
   <title>Central Seu Food</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon/favicon.svg">
-  <link rel="stylesheet" href="central.css?v=20260905-brand-limits">
-  <link rel="stylesheet" href="central-enhancements.css?v=20260905-platform-branding">
+  <link rel="stylesheet" href="central.css?v=20260905-commerce">
+  <link rel="stylesheet" href="central-enhancements.css?v=20260905-image-menu">
+  <link rel="stylesheet" href="central-commerce.css?v=20260905-commerce">
 </head>
 <body>
   <section class="auth" id="auth-screen">
@@ -24,7 +25,7 @@
 
   <div id="central-app" hidden>
     <header class="topbar">
-      <div class="topbar-branding"><div class="brand"><span data-platform-logo>SF</span><div><b>Seu Food</b><small>CENTRAL MULTIEMPRESA</small></div></div><div class="platform-logo-actions"><small>Sugestão: 600 × 300 px</small><label>Trocar logo<input id="platform-logo-upload" type="file" accept="image/png,image/jpeg,image/webp"></label><button type="button" id="platform-logo-remove">Excluir</button></div></div>
+      <div class="topbar-branding"><div class="brand"><span id="platform-logo-trigger" data-platform-logo role="button" tabindex="0" aria-label="Editar logo do painel" aria-expanded="false">SF</span><div><b>Seu Food</b><small>CENTRAL MULTIEMPRESA</small></div></div><div class="platform-logo-actions" id="platform-logo-actions" hidden><small>Sugestão: 600 × 300 px</small><label>Trocar logo<input id="platform-logo-upload" type="file" accept="image/png,image/jpeg,image/webp"></label><button type="button" id="platform-logo-remove">Excluir</button></div></div>
       <nav><a href="../admin/?loja=demonstracao">Abrir demonstração</a><button id="logout">Sair</button></nav>
     </header>
 
@@ -41,11 +42,21 @@
         <article><small>ATIVAS</small><b id="metric-active">0</b></article>
         <article><small>ACESSOS LIBERADOS</small><b id="metric-members">0</b></article>
         <article><small>DOMÍNIOS</small><b id="metric-domains">0</b></article>
+        <article><small>FATURAMENTO PAGO</small><b id="metric-revenue">R$ 0,00</b></article>
+        <article><small>PEDIDOS</small><b id="metric-orders">0</b></article>
+        <article><small>CLIENTES</small><b id="metric-customers">0</b></article>
+        <article class="metric-alert"><small>FALHAS DE PAGAMENTO</small><b id="metric-payment-failures">0</b></article>
       </section>
 
       <section class="toolbar">
         <label><span>Buscar empresa</span><input id="store-search" type="search" placeholder="Nome ou endereço"></label>
         <label><span>Situação</span><select id="store-status-filter"><option value="all">Todas</option><option value="active">Ativas</option><option value="suspended">Suspensas</option><option value="archived">Arquivadas</option></select></label>
+      </section>
+
+      <section class="commerce-overview">
+        <header><div><small>INTELIGÊNCIA COMERCIAL</small><h2>Faturamento e pagamentos por empresa</h2><p>Os totais, clientes e integrações permanecem isolados por empresa.</p></div></header>
+        <div class="commerce-table" id="store-commerce"></div>
+        <div class="payment-failures-card"><header><div><small>ALERTAS DO CHECKOUT</small><h3>PIX e cartão não aprovados</h3></div><span id="payment-failure-badge">0 alertas</span></header><div id="payment-failures"></div></div>
       </section>
 
       <section class="store-list" id="store-list"></section>
@@ -60,8 +71,8 @@
         <label>Endereço no Seu Food<div class="slug-field"><span>seufood.com/</span><input id="new-store-slug" required placeholder="japapou"></div></label>
         <label>E-mail do responsável <small>Opcional: o convite poderá ser copiado e enviado pelo WhatsApp.</small><input id="new-store-owner" type="email" placeholder="responsavel@empresa.com"></label>
         <div class="new-store-logo-field">
-          <div class="new-store-logo-preview" id="new-store-logo-preview"><span>SF</span></div>
-          <div>
+          <div class="new-store-logo-preview" id="new-store-logo-preview" role="button" tabindex="0" data-image-tools-trigger aria-label="Selecionar logo da nova empresa"><span>SF</span></div>
+          <div class="new-store-logo-tools" data-image-tools>
             <b>Logo da empresa <small>Opcional</small></b>
             <p>PNG, JPG ou WebP. A imagem será otimizada automaticamente.</p>
             <label class="logo-upload-button">Escolher logo<input id="new-store-logo" type="file" accept="image/png,image/jpeg,image/webp"></label>
@@ -77,7 +88,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="../../assets/js/supabase-config.js"></script>
   <script src="../../assets/js/r2-config.js"></script>
-  <script src="../../assets/js/supabase-store.js?v=20260905-image-seo"></script>
-  <script src="central.js?v=20260905-platform-branding"></script>
+  <script src="../../assets/js/supabase-store.js?v=20260905-commerce"></script>
+  <script src="central.js?v=20260905-commerce"></script>
 </body>
 </html>

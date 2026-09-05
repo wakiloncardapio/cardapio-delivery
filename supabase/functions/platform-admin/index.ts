@@ -103,11 +103,55 @@ async function listPlatform(db: any) {
   const emails = Object.fromEntries(users.map(user => [user.id, user.email || '']));
   const logos = Object.fromEntries((settings || []).map((row: any) => [row.store_id, String(row.data?.logoUrl || '')]));
   const demoSettings = (settings || []).find((row: any) => row.store_id === DEMO_STORE_ID)?.data || {};
+  const [summaryResult, attemptsResult, paymentsResult] = await Promise.all([
+    db.rpc('platform_commerce_summary'),
+    db.from('payment_attempts').select('store_id,order_id,order_number,payment_method,status,amount,reason_code,reason_message,occurred_at').order('occurred_at', { ascending: false }).limit(500),
+    db.from('payment_provider_configs').select('store_id,provider,enabled,account_email,live_mode,apple_pay_status,updated_at')
+  ]);
+  const missingTable = (error: any, name: string) => error && new RegExp(`${name}|schema cache|does not exist`, 'i').test(error.message || '');
+  if (summaryResult.error && !missingTable(summaryResult.error, 'platform_commerce_summary')) throw summaryResult.error;
+  if (attemptsResult.error && !missingTable(attemptsResult.error, 'payment_attempts')) throw attemptsResult.error;
+  if (paymentsResult.error && !missingTable(paymentsResult.error, 'payment_provider_configs')) throw paymentsResult.error;
+  const summary = summaryResult.error ? [] : (summaryResult.data || []);
+  const attempts = attemptsResult.error ? [] : (attemptsResult.data || []);
+  const paymentConfigs = paymentsResult.error ? [] : (paymentsResult.data || []);
+  const byStore = (stores || []).map((store: any) => {
+    const storeSummary = summary.find((item: any) => item.store_id === store.id) || {};
+    const payment = paymentConfigs.find((config: any) => config.store_id === store.id) || null;
+    return {
+      store_id: store.id,
+      orders: Number(storeSummary.orders || 0),
+      paid_orders: Number(storeSummary.paid_orders || 0),
+      revenue: Number(storeSummary.revenue || 0),
+      customers: Number(storeSummary.customers || 0),
+      begin_checkout: Number(storeSummary.begin_checkout || 0),
+      payment_failures: Number(storeSummary.payment_failures || 0),
+      payment: payment ? {
+        connected: true,
+        enabled: payment.enabled === true,
+        account_email: payment.account_email || '',
+        live_mode: payment.live_mode === true,
+        apple_pay_status: payment.apple_pay_status || 'provider_required',
+        updated_at: payment.updated_at
+      } : { connected: false, enabled: false, apple_pay_status: 'provider_required' }
+    };
+  });
+  const failures = attempts.filter((attempt: any) => ['rejected','error'].includes(attempt.status)).slice(0, 100);
   return {
     stores: (stores || []).map((store: any) => ({ ...store, logo_url: logos[store.id] || '' })),
     members: (members || []).map(member => ({ ...member, email: emails[member.user_id] || '' })),
     domains: domains || [],
-    branding: { logo_url: String(demoSettings.platformLogoUrl || '') }
+    branding: { logo_url: String(demoSettings.platformLogoUrl || '') },
+    commerce: {
+      by_store: byStore,
+      failures,
+      totals: {
+        revenue: byStore.reduce((sum: number, item: any) => sum + Number(item.revenue || 0), 0),
+        orders: byStore.reduce((sum: number, item: any) => sum + Number(item.orders || 0), 0),
+        customers: byStore.reduce((sum: number, item: any) => sum + Number(item.customers || 0), 0),
+        failures: byStore.reduce((sum: number, item: any) => sum + Number(item.payment_failures || 0), 0)
+      }
+    }
   };
 }
 

@@ -23,8 +23,9 @@ Execute, nesta ordem, no SQL Editor do Supabase:
 1. `database/migrations/002_integrations.sql`
 2. `database/migrations/003_make_order_automation.sql`
 3. `database/migrations/004_multi_tenant.sql`
+4. `database/migrations/005_commerce_intelligence.sql`
 
-A migração 003 cria as integrações e o histórico. A migração 004 preserva tudo na loja de demonstração, cria empresas, membros, páginas, domínios e auditoria, e troca as regras abertas por isolamento por empresa.
+A migração 003 cria as integrações e o histórico. A migração 004 preserva tudo na loja de demonstração, cria empresas, membros, páginas, domínios e auditoria, e troca as regras abertas por isolamento por empresa. A migração 005 cria o cofre de credenciais, tentativas de pagamento e o funil próprio por empresa.
 
 Depois da migração 004, execute em **GitHub → Actions** o workflow **Ativar base multiempresa**. Ele publica novamente todas as Edge Functions já preparadas para receber `storeId` e publica a função protegida `platform-admin`.
 
@@ -56,19 +57,22 @@ No painel, abra **Configurações → WhatsApp Cloud API**, ative a integração
 
 Observação: fora da janela de atendimento de 24 horas da Meta, mensagens ao cliente exigem template aprovado. Esta função envia a nota para o WhatsApp interno da loja.
 
-## 3. Mercado Pago
+## 3. Mercado Pago por empresa
 
-A função `create-checkout` está preparada para PIX e cartão pelo Mercado Pago. Configure os Secrets somente no novo projeto Supabase:
+A função `create-checkout` está preparada para PIX e cartão com uma conta Mercado Pago diferente em cada empresa. Depois da migração 005 e do workflow **Ativar base multiempresa**:
 
-```bash
-supabase secrets set MERCADO_PAGO_ACCESS_TOKEN="TOKEN_DO_NOVO_ESTABELECIMENTO"
-supabase secrets set MERCADO_PAGO_WEBHOOK_SECRET="ASSINATURA_DO_WEBHOOK"
-supabase secrets set SITE_URL="https://seudominio.com.br/"
-supabase secrets set PAYMENT_DESCRIPTOR="NOME DA LOJA"
-supabase functions deploy create-checkout mercadopago-webhook payment-status --no-verify-jwt
-```
+1. Entre no painel da empresa.
+2. Abra **Configurações → Zona segura de pagamentos**.
+3. Cole a Public Key, o Access Token e, quando disponível, a assinatura do webhook.
+4. Clique em **Salvar e testar**.
 
-Não reutilize o token ou o webhook de outro comércio. Depois de publicar as funções, ative **Mercado Pago** em **Configurações → Gateway e checkout** no painel.
+O painel valida o Access Token diretamente no Mercado Pago e grava o segredo criptografado no Vault do Supabase. Depois disso, o navegador recebe somente o estado da conexão, nunca o token. A configuração antiga por `MERCADO_PAGO_ACCESS_TOKEN` continua funcionando como compatibilidade temporária para a demonstração.
+
+Para uma operação marketplace em produção, prefira OAuth do Mercado Pago para cada vendedor em vez de solicitar que o lojista copie tokens manualmente. O webhook gerado pelo checkout já inclui a identificação da empresa, e a Central mostra pagamentos recusados com o motivo técnico sem armazenar dados de cartão.
+
+### Apple Pay
+
+Apple Pay não deve ser liberado apenas com um botão visual. A ativação exige um provedor que processe Apple Pay, Merchant ID, certificados e verificação do domínio. O painel exibe a prontidão, mas mantém a forma indisponível até essas etapas estarem concluídas para o domínio da empresa.
 
 <a id="make-mailgun"></a>
 

@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { paymentCredentials, paymentFailure, recordAnalyticsEvent, recordPaymentAttempt } from '../_shared/commerce.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -53,12 +54,10 @@ Deno.serve(async req => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-  const accessToken = Deno.env.get('MERCADO_PAGO_ACCESS_TOKEN') || '';
   const siteUrlValue = Deno.env.get('SITE_URL') || req.headers.get('origin') || '';
   const body = await req.json().catch(() => ({}));
   const { orderId, storeId, paymentMode = 'card', returnUrl: requestedReturnUrl = '' } = body;
   if (!supabaseUrl || !serviceKey) return json({ error: 'Supabase incompleto.' }, 503);
-  if (!accessToken) return json({ error: 'Mercado Pago ainda não configurado.' }, 503);
   let siteUrl = '';
   try {
     const parsed = new URL(siteUrlValue);
@@ -74,6 +73,16 @@ Deno.serve(async req => {
   const { data: order, error } = await db.from('orders').select('*').eq('id', orderId).eq('store_id', storeId).single();
   if (error || !order) return json({ error: 'Pedido não encontrado.' }, 404);
   if (order.payment_status === 'pago') return json({ error: 'Este pedido já foi pago.' }, 409);
+  const credentials = await paymentCredentials(db, String(storeId));
+  if (!credentials.enabled || !credentials.accessToken) {
+    await recordPaymentAttempt(db, {
+      storeId, orderId: order.id, orderNumber: order.order_number,
+      paymentMethod: paymentMode, status: 'error', amount: order.total,
+      reasonCode: 'credentials_missing', reasonMessage: 'Mercado Pago não configurado para esta empresa.'
+    });
+    return json({ error: 'Mercado Pago ainda não configurado para esta empresa.' }, 503);
+  }
+  const accessToken = credentials.accessToken;
 
   let checkoutReturnUrl = new URL(siteUrl);
   if (requestedReturnUrl) {
@@ -104,7 +113,7 @@ Deno.serve(async req => {
     return json({ error: 'Os valores do pedido não conferem. Volte ao cardápio e tente novamente.' }, 409);
   }
 
-  const notificationUrl = `${supabaseUrl}/functions/v1/mercadopago-webhook?source_news=webhooks`;
+  const notificationUrl = `${supabaseUrl}/functions/v1/mercadopago-webhook?source_news=webhooks&store_id=${encodeURIComponent(String(storeId))}`;
   const returnUrl = checkoutReturnUrl.href;
   const idempotencyKey = paymentMode === 'card'
     ? order.id
@@ -133,11 +142,23 @@ Deno.serve(async req => {
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
-      const message = result?.message || result?.error || result?.cause?.[0]?.description || 'O Mercado Pago não conseguiu gerar o PIX.';
-      return json({ error: message }, response.status);
+      const failure = paymentFailure(result, 'O Mercado Pago não conseguiu gerar o PIX.');
+      await recordPaymentAttempt(db, {
+        storeId, orderId: order.id, orderNumber: order.order_number,
+        paymentMethod: 'pix', status: response.status >= 500 ? 'error' : 'rejected',
+        amount: order.total, reasonCode: failure.code, reasonMessage: failure.message
+      });
+      await recordAnalyticsEvent(db, { storeId, orderId: order.id, eventName: 'payment_failed', value: order.total, items: order.items });
+      return json({ error: failure.message }, response.status);
     }
     const details = paymentDetails(result);
     if (!details.qrCode || !details.qrCodeBase64) {
+      await recordPaymentAttempt(db, {
+        storeId, orderId: order.id, orderNumber: order.order_number,
+        paymentMethod: 'pix', status: 'error', amount: order.total,
+        externalReference: details.reference, reasonCode: 'pix_qr_missing',
+        reasonMessage: 'O Mercado Pago não retornou o QR Code do PIX.'
+      });
       return json({ error: 'O Mercado Pago não retornou o QR Code do PIX.' }, 502);
     }
     await db.from('orders').update({
@@ -147,6 +168,12 @@ Deno.serve(async req => {
       checkout_url: details.ticketUrl,
       updated_at: new Date().toISOString()
     }).eq('id', order.id).eq('store_id', storeId);
+    await recordPaymentAttempt(db, {
+      storeId, orderId: order.id, orderNumber: order.order_number,
+      paymentMethod: 'pix', status: 'pending', amount: order.total,
+      externalReference: details.reference
+    });
+    await recordAnalyticsEvent(db, { storeId, orderId: order.id, eventName: 'payment_created', value: order.total, items: order.items });
     return json({
       paymentMode: 'pix',
       reference: details.reference,
@@ -215,12 +242,24 @@ Deno.serve(async req => {
     result = await response.json().catch(() => ({}));
   }
   if (!response.ok) {
-    const message = result?.message || result?.error || result?.cause?.[0]?.description || result?.errors?.[0]?.message || 'O Mercado Pago recusou a criação do pagamento.';
-    return json({ error: message }, response.status);
+    const failure = paymentFailure(result, 'O Mercado Pago recusou a criação do pagamento.');
+    await recordPaymentAttempt(db, {
+      storeId, orderId: order.id, orderNumber: order.order_number,
+      paymentMethod: 'card', status: response.status >= 500 ? 'error' : 'rejected',
+      amount: order.total, reasonCode: failure.code, reasonMessage: failure.message
+    });
+    await recordAnalyticsEvent(db, { storeId, orderId: order.id, eventName: 'payment_failed', value: order.total, items: order.items });
+    return json({ error: failure.message }, response.status);
   }
 
   const details = paymentDetails(result);
   if (!/^https:\/\//.test(details.checkoutUrl)) {
+    await recordPaymentAttempt(db, {
+      storeId, orderId: order.id, orderNumber: order.order_number,
+      paymentMethod: 'card', status: 'error', amount: order.total,
+      externalReference: details.reference, reasonCode: 'checkout_url_missing',
+      reasonMessage: 'O Mercado Pago não retornou a página segura de pagamento.'
+    });
     return json({ error: 'O Mercado Pago não retornou a página segura de pagamento.' }, 502);
   }
 
@@ -232,6 +271,12 @@ Deno.serve(async req => {
     checkout_url: checkoutUrl,
     updated_at: new Date().toISOString()
   }).eq('id', order.id).eq('store_id', storeId);
+  await recordPaymentAttempt(db, {
+    storeId, orderId: order.id, orderNumber: order.order_number,
+    paymentMethod: 'card', status: 'created', amount: order.total,
+    externalReference: details.reference
+  });
+  await recordAnalyticsEvent(db, { storeId, orderId: order.id, eventName: 'payment_created', value: order.total, items: order.items });
 
   return json({
     paymentMode,

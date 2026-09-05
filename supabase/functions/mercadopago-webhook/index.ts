@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import { paymentCredentials, recordAnalyticsEvent, recordPaymentAttempt } from '../_shared/commerce.ts';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status,
@@ -131,17 +132,21 @@ Deno.serve(async req => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-  const accessToken = Deno.env.get('MERCADO_PAGO_ACCESS_TOKEN') || '';
-  const webhookSecret = Deno.env.get('MERCADO_PAGO_WEBHOOK_SECRET') || '';
-  if (!supabaseUrl || !serviceKey || !accessToken || !webhookSecret) {
-    return json({ error: 'Integração Mercado Pago incompleta.' }, 503);
-  }
+  if (!supabaseUrl || !serviceKey) return json({ error: 'Supabase incompleto.' }, 503);
 
   const url = new URL(req.url);
   const body = await req.json().catch(() => ({}));
   const type = String(url.searchParams.get('type') || body.type || '').toLowerCase();
   const dataId = String(url.searchParams.get('data.id') || url.searchParams.get('data_id') || body?.data?.id || '');
+  const requestedStoreId = String(url.searchParams.get('store_id') || body.store_id || '');
   if (!dataId || !['order', 'payment'].includes(type)) return json({ received: true, ignored: true });
+  const db = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+  const credentials = await paymentCredentials(db, requestedStoreId);
+  const accessToken = credentials.accessToken;
+  const webhookSecret = credentials.webhookSecret || Deno.env.get('MERCADO_PAGO_WEBHOOK_SECRET') || '';
+  if (!credentials.enabled || !accessToken || !webhookSecret) {
+    return json({ error: 'Integração Mercado Pago incompleta para esta empresa.' }, 503);
+  }
   if (!(await validSignature(req, dataId, webhookSecret))) return json({ error: 'Assinatura inválida.' }, 401);
 
   const resourceUrl = type === 'payment'
@@ -156,9 +161,9 @@ Deno.serve(async req => {
   const orderId = String(mercadoPagoResource.external_reference || '');
   if (!orderId) return json({ received: true, ignored: true, reason: 'order_missing' });
 
-  const db = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
   const { data: order, error } = await db.from('orders').select('*').eq('id', orderId).maybeSingle();
   if (error || !order) return json({ received: true, ignored: true, reason: 'order_not_found' });
+  if (requestedStoreId && order.store_id !== requestedStoreId) return json({ error: 'Empresa do pagamento não confere.' }, 409);
 
   const chargedAmount = Number(type === 'payment'
     ? mercadoPagoResource.transaction_amount
@@ -190,6 +195,45 @@ Deno.serve(async req => {
     updated_at: paidAt
   }).eq('id', order.id).eq('store_id', order.store_id);
 
+  const paymentResource = type === 'payment'
+    ? mercadoPagoResource
+    : (mercadoPagoResource?.transactions?.payments || [])[0] || mercadoPagoResource;
+  const eventStatus = paid ? 'approved' : refunded ? 'refunded' : rejected ? 'rejected' : 'pending';
+  const reasonCode = String(paymentResource?.status_detail || paymentResource?.status || '');
+  const reasonMessage = rejected
+    ? String(paymentResource?.status_detail || 'Pagamento recusado pelo Mercado Pago.')
+    : '';
+  await recordPaymentAttempt(db, {
+    storeId: order.store_id,
+    orderId: order.id,
+    orderNumber: order.order_number,
+    paymentMethod: String(paymentResource?.payment_method_id || order.payment_method || ''),
+    status: eventStatus,
+    externalReference: String(paymentResource?.id || mercadoPagoResource.id || dataId),
+    amount: order.total,
+    reasonCode,
+    reasonMessage,
+    source: 'webhook'
+  });
+  if (becamePaid) {
+    await recordAnalyticsEvent(db, {
+      storeId: order.store_id, orderId: order.id, eventName: 'purchase',
+      value: order.total, items: order.items,
+      attribution: order.customer?.attribution?.last_touch || {},
+      consent: order.customer?.trackingConsent || {}
+    });
+  } else if (rejected) {
+    await recordAnalyticsEvent(db, {
+      storeId: order.store_id, orderId: order.id, eventName: 'payment_failed',
+      value: order.total, items: order.items
+    });
+  } else if (refunded) {
+    await recordAnalyticsEvent(db, {
+      storeId: order.store_id, orderId: order.id, eventName: 'refund',
+      value: order.total, items: order.items
+    });
+  }
+
   let notifications: Record<string, unknown> = {};
   if (becamePaid) {
     const functionHeaders = {
@@ -211,5 +255,6 @@ Deno.serve(async req => {
     };
   }
 
-  return json({ received: true, orderId: order.id, paymentStatus: nextPaymentStatus, conversions: {}, notifications });
+  const conversions = becamePaid ? { ga4: await sendGa4Purchase(db, { ...order, payment_status: 'pago', updated_at: paidAt }) } : {};
+  return json({ received: true, orderId: order.id, paymentStatus: nextPaymentStatus, conversions, notifications });
 });

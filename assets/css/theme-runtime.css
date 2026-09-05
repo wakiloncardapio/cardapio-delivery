@@ -1,0 +1,8 @@
+body{font-family:var(--body-font,Arial,sans-serif)}
+.brand b,.hero-copy h1,.section-title h2,.product-copy h3,.whatsapp-callout b,.product-modal-head h2,.checkout-head h2,.checkout-step h3,.success h2,.cart h2,.daily-offer-copy h2,.hours-modal h2{font-family:var(--heading-font,Georgia,serif)!important}
+.card-effect-shine .product-card,.card-effect-shine .info-strip,.card-effect-shine .daily-offer{position:relative;isolation:isolate;overflow:hidden}
+.card-effect-shine .product-card::after,.card-effect-shine .info-strip::after,.card-effect-shine .daily-offer::after{content:"";position:absolute;z-index:-1;inset:-80% auto -80% -45%;width:28%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent);transform:rotate(18deg);animation:store-shine 5.5s ease-in-out infinite}
+.card-effect-glass .product-card,.card-effect-glass .info-strip,.card-effect-glass .daily-offer{border-color:rgba(255,255,255,.66);background:rgba(255,255,255,.78);backdrop-filter:blur(13px);box-shadow:0 16px 45px color-mix(in srgb,var(--brand) 18%,transparent)}
+.card-effect-neon .product-card,.card-effect-neon .info-strip,.card-effect-neon .daily-offer{border-color:var(--accent);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent),0 10px 32px color-mix(in srgb,var(--brand-bright) 24%,transparent)}
+@keyframes store-shine{0%,48%{transform:translateX(-180%) rotate(18deg)}72%,100%{transform:translateX(760%) rotate(18deg)}}
+@media(prefers-reduced-motion:reduce){.card-effect-shine .product-card::after,.card-effect-shine .info-strip::after,.card-effect-shine .daily-offer::after{animation:none}}

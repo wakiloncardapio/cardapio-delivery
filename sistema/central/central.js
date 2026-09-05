@@ -3,7 +3,7 @@
   const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
   const db = () => SupabaseStore.getClient();
   const DEMO_STORE_ID = '00000000-0000-0000-0000-000000000001';
-  let platform = { stores: [], members: [], domains: [], branding: { logo_url: '' } };
+  let platform = { stores: [], members: [], domains: [], branding: { logo_url: '' }, commerce: { by_store: [], failures: [], totals: {} } };
   let query = '';
   let statusFilter = 'all';
 
@@ -39,6 +39,59 @@
     $('#metric-active').textContent = platform.stores.filter(store => store.status === 'active').length;
     $('#metric-members').textContent = platform.members.filter(member => member.active).length;
     $('#metric-domains').textContent = platform.domains.length;
+    const totals = platform.commerce?.totals || {};
+    $('#metric-revenue').textContent = money(totals.revenue || 0);
+    $('#metric-orders').textContent = Number(totals.orders || 0).toLocaleString('pt-BR');
+    $('#metric-customers').textContent = Number(totals.customers || 0).toLocaleString('pt-BR');
+    $('#metric-payment-failures').textContent = Number(totals.failures || 0).toLocaleString('pt-BR');
+  }
+
+  function money(value) {
+    return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  function commerceFor(storeId) {
+    return platform.commerce?.by_store?.find(item => item.store_id === storeId) || {};
+  }
+
+  function paymentFailureReason(failure) {
+    const code = String(failure.reason_code || '').toLowerCase();
+    const reasons = {
+      cc_rejected_insufficient_amount: 'Saldo ou limite insuficiente.',
+      cc_rejected_bad_filled_card_number: 'Número do cartão preenchido incorretamente.',
+      cc_rejected_bad_filled_date: 'Validade do cartão preenchida incorretamente.',
+      cc_rejected_bad_filled_security_code: 'Código de segurança preenchido incorretamente.',
+      cc_rejected_call_for_authorize: 'O banco pediu que o titular autorize o pagamento.',
+      cc_rejected_card_disabled: 'Cartão desativado ou bloqueado.',
+      cc_rejected_duplicated_payment: 'Pagamento duplicado.',
+      cc_rejected_high_risk: 'Pagamento recusado pela análise de segurança.',
+      cc_rejected_max_attempts: 'Limite de tentativas excedido.',
+      cc_rejected_other_reason: 'O banco emissor recusou o pagamento.',
+      credentials_missing: 'A empresa ainda não conectou o Mercado Pago.',
+      pix_qr_missing: 'O provedor não devolveu o QR Code do PIX.',
+      checkout_url_missing: 'O provedor não devolveu a página segura de pagamento.'
+    };
+    return reasons[code] || String(failure.reason_message || 'Pagamento não aprovado pelo provedor.');
+  }
+
+  function renderCommerce() {
+    const rows = [...(platform.stores || [])].sort((left, right) => Number(commerceFor(right.id).revenue || 0) - Number(commerceFor(left.id).revenue || 0));
+    $('#store-commerce').innerHTML = rows.length ? `<div class="commerce-row commerce-head"><span>Empresa</span><span>Faturamento pago</span><span>Pedidos</span><span>Clientes</span><span>Checkout</span><span>Pagamento</span></div>${rows.map(store => {
+      const metrics = commerceFor(store.id);
+      const payment = metrics.payment || {};
+      const approval = Number(metrics.begin_checkout || 0) > 0
+        ? `${Math.min(100, Math.round((Number(metrics.paid_orders || 0) / Number(metrics.begin_checkout || 1)) * 100))}% aprovação`
+        : 'Sem dados';
+      return `<div class="commerce-row"><span><b>${esc(store.name)}</b><small>/${esc(store.slug)}</small></span><strong>${esc(money(metrics.revenue || 0))}</strong><span>${Number(metrics.orders || 0).toLocaleString('pt-BR')}</span><span>${Number(metrics.customers || 0).toLocaleString('pt-BR')}</span><span><b>${Number(metrics.begin_checkout || 0).toLocaleString('pt-BR')}</b><small>${esc(approval)}</small></span><span class="connection ${payment.connected && payment.enabled ? 'connected' : ''}">${payment.connected && payment.enabled ? 'Mercado Pago conectado' : 'Não conectado'}</span></div>`;
+    }).join('')}` : '<div class="empty">Nenhuma empresa para analisar.</div>';
+
+    const failures = platform.commerce?.failures || [];
+    $('#payment-failure-badge').textContent = `${failures.length} ${failures.length === 1 ? 'alerta' : 'alertas'}`;
+    $('#payment-failures').innerHTML = failures.length ? failures.map(failure => {
+      const store = platform.stores.find(item => item.id === failure.store_id);
+      const date = failure.occurred_at ? new Date(failure.occurred_at).toLocaleString('pt-BR') : '';
+      return `<article class="payment-failure"><span><b>${esc(store?.name || 'Empresa')}</b><small>${esc(failure.order_number || 'Pedido sem número')} · ${esc(date)}</small></span><span><b>${esc(String(failure.payment_method || '').includes('pix') ? 'PIX' : 'Cartão')}</b><small>${esc(money(failure.amount || 0))}</small></span><p><b>${esc(failure.reason_code || 'não_aprovado')}</b><span>${esc(paymentFailureReason(failure))}</span></p></article>`;
+    }).join('') : '<div class="empty success-empty">Nenhuma falha de pagamento registrada.</div>';
   }
 
   function applyPlatformBranding() {
@@ -58,6 +111,29 @@
     });
     const removeButton = $('#platform-logo-remove');
     if (removeButton) removeButton.hidden = !logoUrl;
+  }
+
+  function closeImageTools(except = null) {
+    document.querySelectorAll('.image-tools-open').forEach(holder => {
+      if (holder === except) return;
+      holder.classList.remove('image-tools-open');
+      holder.querySelector('[data-image-tools],.store-logo-actions')?.setAttribute('hidden', '');
+      holder.querySelector('[data-image-tools-trigger],[data-store-logo-trigger]')?.setAttribute('aria-expanded', 'false');
+    });
+    const platformActions = $('#platform-logo-actions');
+    if (platformActions && except !== $('.topbar-branding')) {
+      platformActions.hidden = true;
+      $('.topbar-branding')?.classList.remove('image-tools-open');
+      $('#platform-logo-trigger')?.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  function toggleImageTools(trigger, holder, tools) {
+    const opening = !holder.classList.contains('image-tools-open');
+    closeImageTools(opening ? holder : null);
+    holder.classList.toggle('image-tools-open', opening);
+    tools.hidden = !opening;
+    trigger.setAttribute('aria-expanded', String(opening));
   }
 
   async function loadPublicBranding() {
@@ -134,9 +210,11 @@
       <div class="store-body">
         <section class="panel store-config"><h3>Empresa e disponibilidade</h3><form data-store-form="${store.id}">
           <div class="store-logo-editor">
-            ${storeLogo(store, 'store-logo-preview')}
+            ${store.logo_url
+              ? `<span class="store-logo-preview has-image" role="button" tabindex="0" data-store-logo-trigger="${store.id}" aria-label="Editar logo de ${esc(store.name)}" aria-expanded="false"><img src="${esc(store.logo_url)}" alt="Logo de ${esc(store.name)}"></span>`
+              : `<span class="store-logo-preview" role="button" tabindex="0" data-store-logo-trigger="${store.id}" aria-label="Adicionar logo de ${esc(store.name)}" aria-expanded="false">${esc(String(store.name || 'E').trim()[0]?.toUpperCase() || 'E')}</span>`}
             <div class="store-logo-copy"><b>Logo da empresa</b><small>Sugestão: 1000 × 500 px · PNG ou WebP</small>
-              <div class="store-logo-actions"><label class="logo-upload-button">Trocar logo<input type="file" data-store-logo-upload="${store.id}" accept="image/png,image/jpeg,image/webp"></label>${store.logo_url ? `<button type="button" data-remove-store-logo="${store.id}">Excluir</button>` : ''}</div>
+              <div class="store-logo-actions" hidden><label class="logo-upload-button">Trocar logo<input type="file" data-store-logo-upload="${store.id}" accept="image/png,image/jpeg,image/webp"></label>${store.logo_url ? `<button type="button" data-remove-store-logo="${store.id}">Excluir</button>` : ''}</div>
             </div>
           </div>
           <div class="store-settings"><label>Nome<input name="name" value="${esc(store.name)}" required></label><label>Endereço<input name="slug" value="${esc(store.slug)}" required></label>
@@ -161,6 +239,7 @@
   function render() {
     applyPlatformBranding();
     updateMetrics();
+    renderCommerce();
     const normalized = query.toLowerCase();
     const stores = platform.stores.filter(store =>
       (statusFilter === 'all' || store.status === statusFilter) &&
@@ -198,6 +277,15 @@
     finally { button.disabled = false; }
   };
   $('#logout').onclick = async () => { await SupabaseStore.signOut(); location.reload(); };
+  $('#platform-logo-trigger').onclick = event => {
+    event.stopPropagation();
+    toggleImageTools(event.currentTarget, $('.topbar-branding'), $('#platform-logo-actions'));
+  };
+  $('#platform-logo-trigger').onkeydown = event => {
+    if (!['Enter', ' '].includes(event.key)) return;
+    event.preventDefault();
+    event.currentTarget.click();
+  };
   $('#platform-logo-upload').onchange = async event => {
     const file = event.target.files?.[0];
     const demoStore = platform.stores.find(store => store.is_demo) || platform.stores.find(store => store.id === DEMO_STORE_ID);
@@ -318,6 +406,13 @@
   };
 
   $('#store-list').onclick = async event => {
+    const imageTrigger = event.target.closest('[data-store-logo-trigger]');
+    if (imageTrigger) {
+      event.stopPropagation();
+      const holder = imageTrigger.closest('.store-logo-editor');
+      toggleImageTools(imageTrigger, holder, holder.querySelector('.store-logo-actions'));
+      return;
+    }
     const memberButton = event.target.closest('[data-member-active]');
     const domainButton = event.target.closest('[data-delete-domain]');
     const logoButton = event.target.closest('[data-remove-store-logo]');
@@ -337,6 +432,22 @@
       notice(memberButton ? 'Permissão atualizada.' : 'Domínio removido.');
     } catch (error) { notice(error.message, true); event.target.disabled = false; }
   };
+
+  document.addEventListener('click', event => {
+    const genericTrigger = event.target.closest('[data-image-tools-trigger]');
+    if (genericTrigger) {
+      const holder = genericTrigger.closest('.new-store-logo-field');
+      if (holder) {
+        event.stopPropagation();
+        toggleImageTools(genericTrigger, holder, holder.querySelector('[data-image-tools]'));
+        return;
+      }
+    }
+    if (!event.target.closest('.topbar-branding,.store-logo-editor,.new-store-logo-field')) closeImageTools();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closeImageTools();
+  });
 
   boot();
 })();

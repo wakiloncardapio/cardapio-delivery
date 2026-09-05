@@ -90,6 +90,7 @@
 
       <h3>Analytics e origem do acesso</h3>
       <p>Quando Analytics é autorizado, Google Analytics e GTM podem usar identificadores como <code>_ga</code> para distinguir navegadores e sessões. Página de entrada, referência e parâmetros <code>utm_source</code>, <code>utm_medium</code>, <code>utm_campaign</code>, <code>utm_content</code> e <code>utm_term</code> permitem apresentar relatórios por canal e campanha sem inserir nome, telefone, e-mail ou endereço físico no GA4. O cookie próprio <code>cardapio_attribution_v1</code> pode manter a primeira e a última origem por até 90 dias.</p>
+      <p>Com a mesma autorização, o Seu Food pode registrar em ambiente próprio um identificador técnico de sessão, visualizações de produto, adições ao carrinho, início de checkout, valor, itens e origem da campanha. Esses eventos são separados por estabelecimento e usados para medir o funil e melhorar o serviço. O sistema também registra, por necessidade operacional e segurança, o estado e o motivo técnico de falhas de PIX ou cartão, sem armazenar número completo do cartão, senha ou código de autenticação.</p>
 
       <h3>Publicidade</h3>
       <p>Meta e Google podem usar cookies ou identificadores técnicos para medição, prevenção de duplicidade e formação de públicos publicitários somente quando Marketing é autorizado. No fluxo de compra, o evento <code>Purchase</code> do navegador e o envio de servidor à Meta também exigem a marcação da opção de ofertas no checkout; sem as duas autorizações, a compra não é enviada para publicidade.</p>
@@ -103,7 +104,7 @@
   </main>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="assets/js/supabase-config.js"></script>
-  <script src="assets/js/supabase-store.js?v=20260905-multitenant-foundation"></script>
+  <script src="assets/js/supabase-store.js?v=20260905-commerce"></script>
   <script src="assets/js/legal.js"></script>
 </body>
 </html>

@@ -1,0 +1,32 @@
+.metrics .metric-alert{border-color:#efc3c8;background:#fff7f7}
+.metrics .metric-alert b{color:var(--danger)}
+.commerce-overview{margin:0 0 18px;padding:18px;border:1px solid var(--line);border-radius:18px;background:#fff;box-shadow:0 8px 28px #18372c0b}
+.commerce-overview>header small,.payment-failures-card header small{color:var(--brand);font-size:8px;font-weight:950;letter-spacing:.13em}
+.commerce-overview>header h2{margin:4px 0;font-size:20px}
+.commerce-overview>header p{margin:0;color:var(--muted);font-size:10px}
+.commerce-table{margin-top:15px;border:1px solid var(--line);border-radius:12px;overflow:auto}
+.commerce-row{min-width:850px;padding:11px 13px;border-top:1px solid var(--line);display:grid;grid-template-columns:minmax(180px,1.4fr) 140px 75px 75px 105px 150px;gap:12px;align-items:center;font-size:10px}
+.commerce-row:first-child{border-top:0}.commerce-row>span{min-width:0}.commerce-row b,.commerce-row strong{display:block}
+.commerce-row small{display:block;margin-top:3px;color:var(--muted);font-size:8px}
+.commerce-head{background:#f4f8f6;color:var(--muted);font-size:8px;font-weight:950;letter-spacing:.04em;text-transform:uppercase}
+.connection{padding:7px 8px;border-radius:999px;background:#fff0f1;color:var(--danger);font-size:8px;font-weight:900;text-align:center}
+.connection.connected{background:#eaf8f1;color:#126142}
+.payment-failures-card{margin-top:15px;border:1px solid #efd3d6;border-radius:13px;background:#fffafa;overflow:hidden}
+.payment-failures-card>header{padding:13px 15px;border-bottom:1px solid #efd3d6;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.payment-failures-card h3{margin:3px 0 0;font-size:14px}.payment-failures-card>header>span{padding:6px 8px;border-radius:999px;background:#fff0f1;color:var(--danger);font-size:8px;font-weight:950}
+.payment-failure{padding:11px 15px;border-top:1px solid #f3e1e3;display:grid;grid-template-columns:minmax(150px,1fr) 120px minmax(220px,1.4fr);gap:13px;align-items:center;font-size:10px}
+.payment-failure:first-child{border-top:0}.payment-failure small{display:block;margin-top:3px;color:var(--muted);font-size:8px}
+.payment-failure p{margin:0;padding:8px;border-radius:8px;background:#fff0f1;color:#80202c;display:grid;gap:3px;font-size:9px}.payment-failure p span{overflow-wrap:anywhere}
+.success-empty{margin:12px;background:#effaf5;color:#126142}
+
+.topbar-branding{position:relative!important;align-items:center!important;flex-direction:row!important}
+.brand>[data-platform-logo]{overflow:hidden;cursor:pointer;outline:0}.brand>[data-platform-logo]:focus-visible,.brand>[data-platform-logo]:hover{box-shadow:0 0 0 3px #0d6b4f22}
+.platform-logo-actions{position:absolute!important;z-index:12;top:calc(100% + 8px);left:0;width:180px;padding:9px;border:1px solid #bfd8ce;border-radius:11px;background:#fff;box-shadow:0 14px 35px #082e2229;display:grid!important;grid-template-columns:1fr 1fr!important;gap:6px!important}
+.platform-logo-actions>small{display:block!important;grid-column:1/-1}
+.store-logo-copy>small{display:none!important}.store-logo-editor.image-tools-open .store-logo-copy>small{display:block!important}
+.store-logo-preview,.new-store-logo-preview{cursor:pointer;outline:0}.store-logo-preview:hover,.store-logo-preview:focus-visible,.new-store-logo-preview:hover,.new-store-logo-preview:focus-visible{border-color:var(--brand);box-shadow:0 0 0 3px #0d6b4f19}
+.new-store-logo-tools{min-width:0}.new-store-logo-field:not(.image-tools-open) .new-store-logo-tools>*{display:none!important}.new-store-logo-field.image-tools-open .new-store-logo-tools{display:block}
+
+@media(max-width:1020px){.payment-failure{grid-template-columns:1fr 100px}.payment-failure p{grid-column:1/-1}}
+@media(max-width:680px){.commerce-overview{padding:13px}.topbar-branding{align-items:flex-start!important}.platform-logo-actions{top:calc(100% + 8px)}.payment-failure{grid-template-columns:1fr}.payment-failure p{grid-column:auto}}
+.platform-logo-actions[hidden],.store-logo-actions[hidden],[data-image-tools][hidden]{display:none!important}

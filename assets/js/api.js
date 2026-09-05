@@ -121,6 +121,14 @@
             console.error('Pedido salvo; falha ao criar checkout.', error);
           }
         }
+        if (saved?.id && payload.customer?.trackingConsent?.analytics === true) {
+          window.SupabaseStore.trackAnalyticsEvent('order_created', payload.items || [], {
+            orderId: saved.id,
+            value: payload.total,
+            attribution: payload.customer?.attribution?.last_touch || {},
+            consent: payload.customer?.trackingConsent || {}
+          }).catch(error => console.warn('Funil próprio indisponível.', error));
+        }
         if (!mercadoPagoMode) trackOrderCreated(payload, orderNumber);
         return orderResult(orderNumber, payload, true, {
           orderId: saved?.id || '',
@@ -210,6 +218,13 @@
     });
 
     const consentState = window.MenuConsent?.get() || {};
+    if (consentState.analytics === true) {
+      window.SupabaseStore?.trackAnalyticsEvent?.(eventName, items, {
+        value,
+        attribution: campaign,
+        consent: consentState
+      }).catch(error => console.warn('Funil próprio indisponível.', error));
+    }
     if (window.__CARDAPIO_DIRECT_GA4__ === true && consentState.analytics === true && typeof window.gtag === 'function') {
       window.gtag('event', eventName, {
         value,

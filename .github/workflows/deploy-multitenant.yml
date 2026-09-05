@@ -43,9 +43,10 @@ jobs:
         run: |
           # A Central exige JWT válido no gateway e também valida o administrador no código.
           supabase functions deploy platform-admin --project-ref "$PROJECT_ID"
+          supabase functions deploy payment-settings --project-ref "$PROJECT_ID"
 
           # Estas rotas recebem checkout público ou webhooks externos. Cada uma faz
           # a própria validação de pedido, empresa, assinatura, prazo ou consentimento.
-          for function_name in whatsapp-order order-email create-checkout payment-status meta-conversions confirmed-conversions mercadopago-webhook; do
+          for function_name in whatsapp-order order-email create-checkout payment-status meta-conversions confirmed-conversions mercadopago-webhook analytics-event; do
             supabase functions deploy "$function_name" --project-ref "$PROJECT_ID" --no-verify-jwt
           done

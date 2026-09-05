@@ -35,9 +35,13 @@
   function normalizeCatalog() {
     const settings = catalog.settings || (catalog.settings = {});
     settings.logoUrl = typeof settings.logoUrl === 'string' ? settings.logoUrl : '';
-    settings.primaryColor = '#620853';
-    settings.accentColor = '#fcd307';
-    settings.brandBrightColor = '#620853';
+    settings.primaryColor = /^#[0-9a-f]{6}$/i.test(settings.primaryColor || '') ? settings.primaryColor : '#620853';
+    settings.accentColor = /^#[0-9a-f]{6}$/i.test(settings.accentColor || '') ? settings.accentColor : '#fcd307';
+    settings.brandBrightColor = /^#[0-9a-f]{6}$/i.test(settings.brandBrightColor || '') ? settings.brandBrightColor : settings.primaryColor;
+    settings.bodyFont = ['arial','inter','trebuchet','poppins'].includes(settings.bodyFont) ? settings.bodyFont : 'arial';
+    settings.headingFont = ['georgia','arial','inter','poppins'].includes(settings.headingFont) ? settings.headingFont : 'georgia';
+    settings.cardEffect = ['clean','shine','glass','neon'].includes(settings.cardEffect) ? settings.cardEffect : 'clean';
+    settings.customCss = typeof settings.customCss === 'string' ? settings.customCss.slice(0, 8000) : '';
     settings.timezone = settings.timezone || 'America/Sao_Paulo';
     settings.establishmentName = settings.establishmentName || settings.storeName || 'Seu Delivery';
     settings.locationName = settings.locationName || settings.city || 'Sua cidade - UF';
@@ -91,11 +95,37 @@
     }));
   }
 
+  function applyTheme(settings) {
+    const fonts = {
+      arial: 'Arial, sans-serif',
+      inter: 'Inter, Arial, sans-serif',
+      trebuchet: '"Trebuchet MS", Arial, sans-serif',
+      poppins: 'Poppins, Arial, sans-serif',
+      georgia: 'Georgia, serif'
+    };
+    document.documentElement.style.setProperty('--brand', settings.primaryColor);
+    document.documentElement.style.setProperty('--accent', settings.accentColor);
+    document.documentElement.style.setProperty('--brand-bright', settings.brandBrightColor);
+    document.documentElement.style.setProperty('--body-font', fonts[settings.bodyFont] || fonts.arial);
+    document.documentElement.style.setProperty('--heading-font', fonts[settings.headingFont] || fonts.georgia);
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', settings.primaryColor);
+    document.body.classList.remove('card-effect-clean','card-effect-shine','card-effect-glass','card-effect-neon');
+    document.body.classList.add(`card-effect-${settings.cardEffect}`);
+
+    const custom = String(settings.customCss || '');
+    const unsafe = /@import|url\s*\(|expression\s*\(|javascript\s*:|behavior\s*:|-moz-binding|<\/?style|<script/i.test(custom);
+    let style = document.querySelector('#store-custom-css');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'store-custom-css';
+      document.head.appendChild(style);
+    }
+    style.textContent = unsafe ? '' : custom;
+  }
+
   function boot() {
     const settings = catalog.settings;
-    document.documentElement.style.setProperty('--brand', '#620853');
-    document.documentElement.style.setProperty('--accent', '#fcd307');
-    document.documentElement.style.setProperty('--brand-bright', '#620853');
+    applyTheme(settings);
     applySeo(settings);
     renderLogo(settings.logoUrl, settings.storeName);
     $$('[data-store-name]').forEach(element => { element.textContent = settings.storeName; });
