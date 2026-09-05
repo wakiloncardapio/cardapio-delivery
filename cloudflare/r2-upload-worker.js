@@ -14,10 +14,11 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}
 
 async function supabaseRequest(env, token, path, init = {}) {
   const url = `${String(env.SUPABASE_URL || '').replace(/\/+$/, '')}${path}`;
+  const publicKey = env.SUPABASE_PUBLISHABLE_KEY || env.SUPABASE_ANON_KEY;
   return fetch(url, {
     ...init,
     headers: {
-      apikey: env.SUPABASE_ANON_KEY,
+      apikey: publicKey,
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
       ...(init.headers || {})
@@ -66,7 +67,8 @@ export default {
     if (request.method !== 'POST' || url.pathname !== '/upload') {
       return json({ error: 'Rota não encontrada.' }, 404);
     }
-    if (!env.IMAGES || !env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !env.R2_PUBLIC_URL) {
+    const publicKey = env.SUPABASE_PUBLISHABLE_KEY || env.SUPABASE_ANON_KEY;
+    if (!env.IMAGES || !env.SUPABASE_URL || !publicKey || !env.R2_PUBLIC_URL) {
       return json({ error: 'Worker incompleto. Confira o binding e as variáveis.' }, 503);
     }
 
