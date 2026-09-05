@@ -45,6 +45,7 @@
     }
     const customHostname = hostname &&
       !hostname.endsWith('.github.io') &&
+      !hostname.endsWith('.pages.dev') &&
       !hostname.endsWith('.workers.dev') &&
       !['localhost', '127.0.0.1'].includes(hostname);
     return customHostname ? { slug: '', hostname } : { slug: 'demonstracao', hostname: '' };
