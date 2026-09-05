@@ -10,7 +10,9 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), {
   headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
 });
 
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+// Aceita também o UUID fixo da loja de demonstração. A autorização continua
+// conferindo no Supabase se a empresa existe, está ativa e pertence ao usuário.
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const seoSlug = value => String(value || 'imagem').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .toLowerCase().replace(/\.[a-z0-9]{2,5}$/i, '').replace(/[^a-z0-9]+/g, '-')
   .replace(/^-+|-+$/g, '').slice(0, 120) || 'imagem';
