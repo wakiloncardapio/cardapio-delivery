@@ -225,7 +225,7 @@
       });
     }
     catalog.categories = (catalog.categories || []).map(category => {
-      if (!category.imageUrl && categoryDefaults[category.id]) {
+      if (!Object.prototype.hasOwnProperty.call(category, 'imageUrl') && categoryDefaults[category.id]) {
         changed = true;
         return { ...category, imageUrl: categoryDefaults[category.id] };
       }
@@ -405,7 +405,7 @@
     editor.innerHTML = Object.entries(crmNotificationDefaults).map(([event, defaults]) => {
       const current = { ...defaults, ...(notifications[event] || {}) };
       notifications[event] = { enabled: current.enabled !== false, title: current.title, message: current.message, imageUrl: current.imageUrl || '' };
-      return `<article class="notification-editor ${current.enabled === false ? 'disabled' : ''}" data-notification="${event}"><header><div><small>ETAPA DO CRM</small><h4>${esc(defaults.label)}</h4></div><label class="notification-toggle"><input type="checkbox" data-notification-enabled ${current.enabled === false ? '' : 'checked'}> Enviar mensagem</label></header><div class="notification-body"><div class="notification-image">${current.imageUrl ? `<img src="${esc(preview(current.imageUrl))}" alt="">` : '<span>✉</span>'}</div><div class="notification-fields"><label>Título do e-mail<input data-notification-title value="${esc(current.title)}"></label><label>Mensagem<textarea data-notification-message rows="3">${esc(current.message)}</textarea></label><label>URL da imagem opcional<input data-notification-image value="${esc(current.imageUrl)}" placeholder="https://..."></label><div class="notification-image-actions"><label class="option-upload">Enviar imagem<input type="file" accept="image/jpeg,image/png,image/webp" data-notification-upload></label><button type="button" data-remove-notification-image ${current.imageUrl ? '' : 'hidden'}>Remover imagem</button></div></div></div></article>`;
+      return `<article class="notification-editor ${current.enabled === false ? 'disabled' : ''}" data-notification="${event}"><header><div><small>ETAPA DO CRM</small><h4>${esc(defaults.label)}</h4></div><label class="notification-toggle"><input type="checkbox" data-notification-enabled ${current.enabled === false ? '' : 'checked'}> Enviar mensagem</label></header><div class="notification-body"><div class="notification-image">${current.imageUrl ? `<img src="${esc(preview(current.imageUrl))}" alt="Imagem de ${esc(defaults.label)}">` : '<span>✉</span>'}</div><div class="notification-fields"><label>Título do e-mail<input data-notification-title value="${esc(current.title)}"></label><label>Mensagem<textarea data-notification-message rows="3">${esc(current.message)}</textarea></label><input type="hidden" data-notification-image value="${esc(current.imageUrl)}"><div class="notification-image-actions"><label class="option-upload">Trocar imagem<input type="file" accept="image/jpeg,image/png,image/webp" data-notification-upload></label><button type="button" data-remove-notification-image ${current.imageUrl ? '' : 'hidden'}>Excluir</button></div><small class="image-size-hint">Sugestão: 1200 × 630 px · JPG ou WebP</small></div></div></article>`;
     }).join('');
     editor.querySelectorAll('[data-notification]').forEach(card => {
       const event = card.dataset.notification;
@@ -416,9 +416,12 @@
       };
       card.querySelector('[data-notification-title]').oninput = change => { entry.title = change.target.value; };
       card.querySelector('[data-notification-message]').oninput = change => { entry.message = change.target.value; };
-      card.querySelector('[data-notification-image]').onchange = change => { entry.imageUrl = change.target.value.trim(); renderCrmNotifications(); };
       card.querySelector('[data-notification-upload]').onchange = change => upload(change.target, 'notification', event);
-      card.querySelector('[data-remove-notification-image]').onclick = () => { entry.imageUrl = ''; renderCrmNotifications(); };
+      card.querySelector('[data-remove-notification-image]').onclick = async () => {
+        entry.imageUrl = '';
+        renderCrmNotifications();
+        await persistCatalogImageChange('Imagem da mensagem excluída.');
+      };
     });
   }
 
@@ -1197,12 +1200,12 @@
       visibleProductCount += visibleProducts.length;
       const collapsed = !filtersActive && collapsedProductCategories.has(String(category.id));
       const categoryVisual = category.imageUrl
-        ? `<img src="${esc(preview(category.imageUrl))}" alt="">`
+        ? `<img src="${esc(preview(category.imageUrl))}" alt="Imagem da categoria ${esc(category.name)}">`
         : `<span aria-hidden="true">${esc(category.emoji || '•')}</span>`;
       const cards = visibleProducts.map(product => {
         const groupCount = (product.addonGroups || []).length;
         const image = product.imageUrl
-          ? `<img src="${esc(preview(product.imageUrl))}" alt="" loading="lazy" decoding="async">`
+          ? `<img src="${esc(preview(product.imageUrl))}" alt="Imagem de ${esc(product.name)}" loading="lazy" decoding="async">`
           : '<span class="product-no-image">Sem imagem</span>';
         return `<article class="product-admin-card">
           <div class="product-thumb">${image}<div class="product-status-badges"><span class="${product.active === false ? 'inactive' : 'active'}">${product.active === false ? 'Inativo' : 'Ativo'}</span>${product.featured === true ? '<span class="featured">Destaque</span>' : ''}</div></div>
@@ -1269,12 +1272,12 @@
   function renderCategories() {
     $('#category-editor').innerHTML = catalog.categories.map(category => `
       <div class="category-row" data-category-row="${esc(category.id)}">
-        <div class="category-thumb">${category.imageUrl ? `<img src="${esc(preview(category.imageUrl))}" alt="">` : esc(category.emoji || '🥣')}</div>
+        <div class="category-thumb">${category.imageUrl ? `<img src="${esc(preview(category.imageUrl))}" alt="Imagem da categoria ${esc(category.name)}">` : esc(category.emoji || '🥣')}</div>
         <div class="category-fields">
           <input class="emoji" aria-label="Emoji da categoria" value="${esc(category.emoji || '🥣')}" data-cat-emoji="${esc(category.id)}">
           <input aria-label="Nome da categoria" value="${esc(category.name)}" data-cat-name="${esc(category.id)}">
         </div>
-        <label class="category-upload">Trocar imagem<input type="file" accept="image/jpeg,image/png,image/webp" data-cat-upload="${esc(category.id)}"></label>
+        <div class="category-image-actions"><label class="category-upload">Trocar imagem<input type="file" accept="image/jpeg,image/png,image/webp" data-cat-upload="${esc(category.id)}"></label><button type="button" class="image-delete-button" data-cat-image-remove="${esc(category.id)}" ${category.imageUrl ? '' : 'hidden'}>Excluir</button><small class="image-size-hint">Sugestão: 1200 × 650 px</small></div>
         <label class="category-active"><input type="checkbox" ${category.active ? 'checked' : ''} data-cat-active="${esc(category.id)}"> Ativa</label>
       </div>`).join('');
     $('#category-editor').querySelectorAll('[data-cat-emoji],[data-cat-name]').forEach(input => {
@@ -1296,6 +1299,16 @@
     $('#category-editor').querySelectorAll('[data-cat-upload]').forEach(input => {
       input.onchange = () => upload(input, 'category', input.dataset.catUpload);
     });
+    $('#category-editor').querySelectorAll('[data-cat-image-remove]').forEach(button => {
+      button.onclick = async () => {
+        const category = catalog.categories.find(item => item.id === button.dataset.catImageRemove);
+        if (!category) return;
+        category.imageUrl = '';
+        renderCategories();
+        renderProducts();
+        await persistCatalogImageChange('Imagem da categoria excluída.');
+      };
+    });
   }
 
   function renderInfoIcons() {
@@ -1307,18 +1320,15 @@
       ['payment', 'Pagamento', '💳']
     ];
     const editor = $('#info-icons-editor');
-    editor.innerHTML = definitions.map(([key, label, fallback]) => `<div class="info-icon-row" data-info-icon-row="${key}"><div class="info-icon-preview">${icons[key] ? `<img src="${esc(preview(icons[key]))}" alt="">` : fallback}</div><div><b>${esc(label)}</b><input value="${esc(icons[key] || '')}" placeholder="URL da imagem" data-info-icon-url="${key}"></div><label class="option-upload">Enviar imagem<input type="file" accept="image/jpeg,image/png,image/webp" data-info-icon-upload="${key}"></label><button type="button" data-info-icon-remove="${key}" ${icons[key] ? '' : 'hidden'}>Remover</button></div>`).join('');
-    editor.querySelectorAll('[data-info-icon-url]').forEach(input => {
-      input.oninput = () => { icons[input.dataset.infoIconUrl] = input.value.trim(); };
-      input.onchange = renderInfoIcons;
-    });
+    editor.innerHTML = definitions.map(([key, label, fallback]) => `<div class="info-icon-row" data-info-icon-row="${key}"><div class="info-icon-preview">${icons[key] ? `<img src="${esc(preview(icons[key]))}" alt="Ícone de ${esc(label)}">` : fallback}</div><div><b>${esc(label)}</b><small class="image-size-hint">Sugestão: 256 × 256 px</small><input type="hidden" value="${esc(icons[key] || '')}" data-info-icon-url="${key}"></div><label class="option-upload">Trocar imagem<input type="file" accept="image/jpeg,image/png,image/webp" data-info-icon-upload="${key}"></label><button type="button" data-info-icon-remove="${key}" ${icons[key] ? '' : 'hidden'}>Excluir</button></div>`).join('');
     editor.querySelectorAll('[data-info-icon-upload]').forEach(input => {
       input.onchange = () => upload(input, 'infoIcon', input.dataset.infoIconUpload);
     });
     editor.querySelectorAll('[data-info-icon-remove]').forEach(button => {
-      button.onclick = () => {
+      button.onclick = async () => {
         icons[button.dataset.infoIconRemove] = '';
         renderInfoIcons();
+        await persistCatalogImageChange('Ícone excluído.');
       };
     });
   }
@@ -1326,11 +1336,15 @@
   function renderPreviews() {
     const settings = catalog.settings;
     const storeName = settings.establishmentName || settings.storeName || 'Seu Delivery';
-    $('#logo-preview').innerHTML = settings.logoUrl ? `<img src="${esc(preview(settings.logoUrl))}">` : 'SD';
-    $('#banner-preview').innerHTML = settings.bannerUrl ? `<img src="${esc(preview(settings.bannerUrl))}">` : '◈';
-    $('#favicon-preview').innerHTML = settings.faviconUrl ? `<img src="${esc(preview(settings.faviconUrl))}" alt="">` : 'SD';
+    $('#logo-preview').innerHTML = settings.logoUrl ? `<img src="${esc(preview(settings.logoUrl))}" alt="Logo de ${esc(storeName)}">` : 'SD';
+    $('#banner-preview').innerHTML = settings.bannerUrl ? `<img src="${esc(preview(settings.bannerUrl))}" alt="Banner de ${esc(storeName)}">` : '◈';
+    $('#favicon-preview').innerHTML = settings.faviconUrl ? `<img src="${esc(preview(settings.faviconUrl))}" alt="Favicon de ${esc(storeName)}">` : 'SD';
     const offerImage = settings.dailyOffer?.imageUrl || $('#daily-offer-image')?.value || '';
-    $('#daily-offer-preview').innerHTML = offerImage ? `<img src="${esc(preview(offerImage))}" alt="">` : 'OFERTA';
+    $('#daily-offer-preview').innerHTML = offerImage ? `<img src="${esc(preview(offerImage))}" alt="Oferta de ${esc(storeName)}">` : 'OFERTA';
+    $('#remove-logo-image').hidden = !settings.logoUrl;
+    $('#remove-banner-image').hidden = !settings.bannerUrl;
+    $('#remove-favicon-image').hidden = !settings.faviconUrl;
+    $('#remove-offer-image').hidden = !offerImage;
     $$('.admin-logo img').forEach(image => { image.src = preview(settings.logoUrl || 'assets/images/favicon/favicon.svg'); });
     $$('.admin-logo b, .auth-brand b').forEach(element => { element.textContent = storeName; });
   }
@@ -1418,7 +1432,7 @@
   }
 
   function renderProductPhoto() {
-    $('#product-photo').innerHTML = editing?.imageUrl ? `<img src="${esc(preview(editing.imageUrl))}">` : '⬡';
+    $('#product-photo').innerHTML = editing?.imageUrl ? `<img src="${esc(preview(editing.imageUrl))}" alt="Imagem de ${esc(editing.name || 'produto')}">` : '⬡';
     $('#remove-product-image').hidden = !editing?.imageUrl;
   }
 
@@ -1428,7 +1442,7 @@
       group.priceMode = group.priceMode === 'final' ? 'final' : 'additive';
       const priceHelp = group.priceMode === 'final' ? 'Digite o preço total de cada tamanho.' : 'Digite somente o acréscimo sobre o preço base.';
       const priceLabel = group.priceMode === 'final' ? 'Preço final' : 'Acréscimo';
-      const options = group.options.length ? group.options.map(option => `<div class="option-row" data-option="${esc(option.id)}"><div class="option-thumb${option.imageUrl ? '' : ' no-image'}">${option.imageUrl ? `<img src="${esc(preview(option.imageUrl))}" alt="">` : ''}</div><div class="option-fields"><label><span>Nome da opção</span><input value="${esc(option.name)}" data-option-name placeholder="Ex.: 500 ml ou Morango" required></label><label><span>URL da imagem</span><input value="${esc(option.imageUrl || '')}" data-option-image placeholder="https://..."></label></div><label class="option-upload">Trocar imagem<input type="file" accept="image/jpeg,image/png,image/webp" data-option-upload></label><label class="option-price-field"><span>${priceLabel}</span><input class="option-price ${group.priceMode === 'final' ? 'final-price' : ''}" aria-label="${priceLabel}" type="number" inputmode="decimal" step=".01" min="0" value="${Number(option.price || 0)}" data-option-price required></label><label class="option-available"><input type="checkbox" data-option-available ${option.available === false ? '' : 'checked'}> Disponível</label><button type="button" class="remove-option" data-remove-option aria-label="Excluir opção">🗑 Excluir</button></div>`).join('') : '<p class="options-empty">Nenhuma opção cadastrada neste grupo.</p>';
+      const options = group.options.length ? group.options.map(option => `<div class="option-row" data-option="${esc(option.id)}"><div class="option-thumb${option.imageUrl ? '' : ' no-image'}">${option.imageUrl ? `<img src="${esc(preview(option.imageUrl))}" alt="Imagem de ${esc(option.name || 'opção')}">` : ''}</div><div class="option-fields"><label><span>Nome da opção</span><input value="${esc(option.name)}" data-option-name placeholder="Ex.: 500 ml ou Morango" required></label><input type="hidden" value="${esc(option.imageUrl || '')}" data-option-image></div><div class="option-image-actions"><label class="option-upload">Trocar imagem<input type="file" accept="image/jpeg,image/png,image/webp" data-option-upload></label><button type="button" class="image-delete-button" data-remove-option-image ${option.imageUrl ? '' : 'hidden'}>Excluir imagem</button><small class="image-size-hint">Sugestão: 600 × 600 px</small></div><label class="option-price-field"><span>${priceLabel}</span><input class="option-price ${group.priceMode === 'final' ? 'final-price' : ''}" aria-label="${priceLabel}" type="number" inputmode="decimal" step=".01" min="0" value="${Number(option.price || 0)}" data-option-price required></label><label class="option-available"><input type="checkbox" data-option-available ${option.available === false ? '' : 'checked'}> Disponível</label><button type="button" class="remove-option" data-remove-option aria-label="Excluir opção">🗑 Excluir</button></div>`).join('') : '<p class="options-empty">Nenhuma opção cadastrada neste grupo.</p>';
       return `<article class="addon-group-card" data-group="${esc(group.id)}"><header><label class="group-name"><span>Nome do grupo</span><input value="${esc(group.name)}" data-group-name placeholder="Ex.: Escolha o tamanho" required></label><label class="group-required"><input type="checkbox" data-group-required ${group.required ? 'checked' : ''}> Escolha obrigatória</label><label class="group-max"><span>Máximo</span><input type="number" inputmode="numeric" min="1" max="99" value="${group.max || 1}" data-group-max></label><label class="group-price-mode"><span>Tipo de preço</span><select data-group-price-mode><option value="additive" ${group.priceMode === 'additive' ? 'selected' : ''}>Acréscimo (+)</option><option value="final" ${group.priceMode === 'final' ? 'selected' : ''}>Preço final por tamanho</option></select></label><button type="button" class="remove-group" data-remove-group>🗑 Excluir grupo</button></header><small class="group-price-help">${priceHelp}</small>` +
         `<div class="options">${options}<button type="button" class="add-option" data-add-option>+ Adicionar opção</button></div></article>`;
     }).join('');
@@ -1464,9 +1478,50 @@
         row.querySelector('[data-option-image]').onchange = event => { option.imageUrl = event.target.value.trim(); markEditorDirty(); renderGroups(); };
         row.querySelector('[data-option-available]').onchange = event => { option.available = event.target.checked; };
         row.querySelector('[data-option-upload]').onchange = event => upload(event.target, 'option', option.id);
+        row.querySelector('[data-remove-option-image]').onclick = () => { option.imageUrl = ''; markEditorDirty(); renderGroups(); };
         row.querySelector('[data-remove-option]').onclick = () => { group.options = group.options.filter(item => item.id !== option.id); markEditorDirty(); renderGroups(); };
       });
     });
+  }
+
+  function imageSeoName(target, referenceId, file) {
+    const settings = catalog.settings || {};
+    const storeName = settings.establishmentName || settings.storeName || 'Seu Food';
+    const city = settings.city || settings.locationName || '';
+    const category = target === 'category' ? catalog.categories.find(item => item.id === referenceId) : null;
+    const option = target === 'option' && editing
+      ? editing.addonGroups.flatMap(group => group.options || []).find(item => item.id === referenceId)
+      : null;
+    const labels = {
+      logo: 'logo',
+      banner: 'banner-cardapio',
+      favicon: 'favicon',
+      product: editing?.name || file?.name || 'produto',
+      category: `categoria-${category?.name || referenceId || 'cardapio'}`,
+      option: `${editing?.name || 'produto'}-${option?.name || 'opcao'}`,
+      notification: `mensagem-${crmNotificationDefaults[referenceId]?.label || referenceId || 'pedido'}`,
+      infoIcon: `icone-${referenceId || 'informacao'}`,
+      offer: `${catalog.settings.dailyOffer?.title || 'oferta-do-dia'}`
+    };
+    return [storeName, labels[target] || file?.name || 'imagem', city].filter(Boolean).join('-');
+  }
+
+  async function persistCatalogImageChange(successMessage) {
+    try {
+      await SupabaseStore.saveCatalog(catalog);
+      notice(successMessage);
+    } catch (error) {
+      notice(error.message, true);
+    }
+  }
+
+  async function removePublishedImage(target) {
+    if (target === 'logo') { catalog.settings.logoUrl = ''; $('#logo-url').value = ''; }
+    if (target === 'banner') { catalog.settings.bannerUrl = ''; $('#banner-url').value = ''; }
+    if (target === 'favicon') { catalog.settings.faviconUrl = ''; $('#favicon-url').value = ''; }
+    if (target === 'offer') { catalog.settings.dailyOffer.imageUrl = ''; $('#daily-offer-image').value = ''; }
+    renderPreviews();
+    await persistCatalogImageChange('Imagem excluída do painel e do cardápio.');
   }
 
   async function upload(input, target, referenceId = '') {
@@ -1483,7 +1538,7 @@
     try {
       notice('Otimizando e enviando imagem...');
       const folders = { logo: 'logo', banner: 'banner', favicon: 'favicon', product: 'produtos', category: 'categorias', option: 'acompanhamentos', notification: 'mensagens', infoIcon: 'icones', offer: 'ofertas' };
-      const url = await SupabaseStore.uploadImage(file, folders[target] || 'geral');
+      const url = await SupabaseStore.uploadImage(file, folders[target] || 'geral', imageSeoName(target, referenceId, file));
       if (target === 'logo') { catalog.settings.logoUrl = url; $('#logo-url').value = url; }
       if (target === 'banner') { catalog.settings.bannerUrl = url; $('#banner-url').value = url; }
       if (target === 'favicon') { catalog.settings.faviconUrl = url; $('#favicon-url').value = url; }
@@ -1512,7 +1567,7 @@
         renderCrmNotifications();
       }
       renderPreviews();
-      if (target === 'logo' || target === 'banner' || target === 'favicon' || target === 'category' || target === 'infoIcon' || target === 'offer') {
+      if (target === 'logo' || target === 'banner' || target === 'favicon' || target === 'category' || target === 'infoIcon' || target === 'offer' || target === 'notification') {
         await SupabaseStore.saveCatalog(catalog);
         if (target === 'category') { renderCategories(); renderProducts(); }
         notice('Imagem armazenada e publicada no cardápio.');
@@ -1803,6 +1858,10 @@
       renderProducts();
     };
     $$('[data-upload]').forEach(input => { input.onchange = () => upload(input, input.dataset.upload); });
+    $('#remove-logo-image').onclick = () => removePublishedImage('logo');
+    $('#remove-banner-image').onclick = () => removePublishedImage('banner');
+    $('#remove-favicon-image').onclick = () => removePublishedImage('favicon');
+    $('#remove-offer-image').onclick = () => removePublishedImage('offer');
     $('#logo-url').oninput = event => { catalog.settings.logoUrl = event.target.value; renderPreviews(); };
     $('#banner-url').oninput = event => { catalog.settings.bannerUrl = event.target.value; renderPreviews(); };
     $('#favicon-url').oninput = event => { catalog.settings.faviconUrl = event.target.value; renderPreviews(); };

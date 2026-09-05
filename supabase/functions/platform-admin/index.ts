@@ -27,6 +27,7 @@ function starterCatalogData(row: any, storeName: string) {
     seoTitle: `${storeName} | Cardápio on-line`,
     logoUrl: '',
     faviconUrl: '',
+    platformLogoUrl: '',
     locationName: 'Sua cidade - UF',
     city: '',
     address: '',
@@ -101,10 +102,12 @@ async function listPlatform(db: any) {
   if (settingsError) throw settingsError;
   const emails = Object.fromEntries(users.map(user => [user.id, user.email || '']));
   const logos = Object.fromEntries((settings || []).map((row: any) => [row.store_id, String(row.data?.logoUrl || '')]));
+  const demoSettings = (settings || []).find((row: any) => row.store_id === DEMO_STORE_ID)?.data || {};
   return {
     stores: (stores || []).map((store: any) => ({ ...store, logo_url: logos[store.id] || '' })),
     members: (members || []).map(member => ({ ...member, email: emails[member.user_id] || '' })),
-    domains: domains || []
+    domains: domains || [],
+    branding: { logo_url: String(demoSettings.platformLogoUrl || '') }
   };
 }
 
@@ -125,6 +128,21 @@ Deno.serve(async req => {
     const inviteRedirect = `${platformUrl}/sistema/convite/`;
 
     if (action === 'list') return json(await listPlatform(db));
+
+    if (action === 'update_platform_branding') {
+      const logoUrl = String(body.logoUrl || '').trim();
+      if (logoUrl && !/^https:\/\//i.test(logoUrl)) return json({ error: 'A URL da logo precisa começar com https://.' }, 400);
+      const { data: settingsRow, error: settingsReadError } = await db.from('catalogs')
+        .select('data').eq('store_id', DEMO_STORE_ID).eq('id', 'settings').single();
+      if (settingsReadError) throw settingsReadError;
+      const { error: updateError } = await db.from('catalogs').update({
+        data: { ...(settingsRow?.data || {}), platformLogoUrl: logoUrl },
+        updated_at: new Date().toISOString()
+      }).eq('store_id', DEMO_STORE_ID).eq('id', 'settings');
+      if (updateError) throw updateError;
+      await audit(db, actor.id, null, logoUrl ? 'platform_logo_updated' : 'platform_logo_removed');
+      return json({ platform: await listPlatform(db) });
+    }
 
     if (action === 'create_store') {
       const name = String(body.name || '').trim();

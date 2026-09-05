@@ -83,7 +83,7 @@
     }
     catalog.categories = (catalog.categories || []).map(category => ({
       ...category,
-      imageUrl: category.imageUrl || categoryDefaults[category.id] || ''
+      imageUrl: Object.prototype.hasOwnProperty.call(category, 'imageUrl') ? category.imageUrl : (categoryDefaults[category.id] || '')
     }));
     catalog.products = (catalog.products || []).map(product => ({
       ...product,
@@ -117,6 +117,7 @@
     const addressNode = $('#store-address');
     if (addressNode) addressNode.textContent = settings.address;
     $('#hero-image').src = settings.bannerUrl;
+    $('#hero-image').alt = `Banner de ${settings.establishmentName || settings.storeName}${settings.city ? ` em ${settings.city}` : ''}`;
     const whatsappNumber = String(settings.whatsapp || '').replace(/\D/g, '');
     const whatsapp = whatsappNumber ? 'https://wa.me/' + whatsappNumber : '';
     $('#nav-whatsapp').href = whatsapp || '#';
@@ -239,6 +240,7 @@
   }
 
   function renderInfoStrip(settings) {
+    const labels = { service: 'Atendimento', time: 'Tempo estimado', delivery: 'Entrega', payment: 'Pagamento' };
     $$('[data-info-icon]').forEach(holder => {
       const key = holder.dataset.infoIcon;
       const fallback = holder.dataset.fallback || '●';
@@ -250,7 +252,7 @@
       }
       const image = document.createElement('img');
       image.src = url;
-      image.alt = '';
+      image.alt = `${labels[key] || 'Informação'} de ${settings.establishmentName || settings.storeName || 'Seu Delivery'}`;
       image.addEventListener('error', () => {
         holder.textContent = fallback;
         holder.classList.remove('has-image');
@@ -277,7 +279,7 @@
     if (imageUrl) {
       const image = document.createElement('img');
       image.src = imageUrl;
-      image.alt = offer.title || 'Oferta do dia';
+      image.alt = `${offer.title || 'Oferta do dia'} de ${settings.establishmentName || settings.storeName || 'Seu Delivery'}`;
       image.addEventListener('error', () => { imageBox.hidden = true; }, { once: true });
       imageBox.replaceChildren(image);
     } else {
@@ -296,7 +298,7 @@
       }
       const image = document.createElement('img');
       image.src = url;
-      image.alt = name || 'Seu Delivery';
+      image.alt = `Logo de ${name || 'Seu Delivery'}`;
       image.addEventListener('error', () => {
         mark.classList.remove('has-logo');
         mark.textContent = initials;
@@ -333,9 +335,10 @@
 
   function renderCategories() {
     const container = $('#categories');
+    const localBrand = [catalog.settings.establishmentName || catalog.settings.storeName, catalog.settings.city || catalog.settings.locationName].filter(Boolean).join(' em ');
     container.innerHTML = catalog.categories.filter(category => category.active).map(category =>
       '<button type="button" data-category="' + escape(category.id) + '" class="' + (category.id === active ? 'active' : '') + '" role="tab" aria-selected="' + (category.id === active) + '">' +
-        '<span class="category-media">' + imageMarkup(category.imageUrl, category.name, category.emoji || '🥣') + '</span>' +
+        '<span class="category-media">' + imageMarkup(category.imageUrl, `${category.name} de ${localBrand}`, category.emoji || '🥣') + '</span>' +
         '<b>' + escape(category.name) + '</b>' +
       '</button>'
     ).join('');
@@ -388,6 +391,7 @@
     }
     container.innerHTML = products.map(product => {
       const category = catalog.categories.find(item => item.id === product.categoryId) || {};
+      const localBrand = [catalog.settings.establishmentName || catalog.settings.storeName, catalog.settings.city || catalog.settings.locationName].filter(Boolean).join(' em ');
       const imageUrl = product.imageUrl || category.imageUrl || '';
       const freeShipping = product.freeShippingEnabled === true ? String(product.freeShippingText || 'Entrega grátis').trim() : '';
       const helmetIcon = '<img src="assets/images/icone-capacete-entrega-gratis.svg" alt="" aria-hidden="true">';
@@ -395,7 +399,7 @@
         '<div class="product-copy"><small>' + escape(category.name || 'Seu Delivery') + '</small><h3>' + escape(product.name) + '</h3><p>' + escape(product.description) + '</p>' +
         (freeShipping ? '<em class="free-shipping">' + helmetIcon + escape(freeShipping) + '</em>' : '') +
         '<footer><b class="product-price">' + ((product.addonGroups || []).some(group => group.priceMode === 'final') ? '<small>A partir de</small>' : '') + '<strong>' + MenuAPI.money(startingPrice(product)) + '</strong></b><span aria-hidden="true">＋</span></footer></div>' +
-        '<div class="product-media">' + imageMarkup(imageUrl, product.name, category.emoji || '🥣') + (freeShipping ? '<span class="delivery-free-icon" title="Entrega grátis">' + helmetIcon + '</span>' : '') + (product.badge ? '<b>' + escape(product.badge) + '</b>' : '') + '</div>' +
+        '<div class="product-media">' + imageMarkup(imageUrl, `${product.name} de ${localBrand}`, category.emoji || '🥣') + (freeShipping ? '<span class="delivery-free-icon" title="Entrega grátis">' + helmetIcon + '</span>' : '') + (product.badge ? '<b>' + escape(product.badge) + '</b>' : '') + '</div>' +
       '</button></article>';
     }).join('');
     bindImageFallbacks(container);

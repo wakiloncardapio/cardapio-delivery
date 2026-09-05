@@ -2,7 +2,8 @@
   const $ = selector => document.querySelector(selector);
   const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
   const db = () => SupabaseStore.getClient();
-  let platform = { stores: [], members: [], domains: [] };
+  const DEMO_STORE_ID = '00000000-0000-0000-0000-000000000001';
+  let platform = { stores: [], members: [], domains: [], branding: { logo_url: '' } };
   let query = '';
   let statusFilter = 'all';
 
@@ -40,6 +41,32 @@
     $('#metric-domains').textContent = platform.domains.length;
   }
 
+  function applyPlatformBranding() {
+    const logoUrl = String(platform.branding?.logo_url || '');
+    document.querySelectorAll('[data-platform-logo]').forEach(mark => {
+      if (!logoUrl) {
+        mark.classList.remove('has-image');
+        mark.textContent = 'SF';
+        return;
+      }
+      mark.innerHTML = `<img src="${esc(logoUrl)}" alt="Logo do painel Seu Food">`;
+      mark.classList.add('has-image');
+      mark.querySelector('img').addEventListener('error', () => {
+        mark.classList.remove('has-image');
+        mark.textContent = 'SF';
+      }, { once: true });
+    });
+    const removeButton = $('#platform-logo-remove');
+    if (removeButton) removeButton.hidden = !logoUrl;
+  }
+
+  async function loadPublicBranding() {
+    const { data } = await db().from('catalogs').select('data')
+      .eq('store_id', DEMO_STORE_ID).eq('id', 'settings').maybeSingle();
+    platform.branding = { logo_url: String(data?.data?.platformLogoUrl || '') };
+    applyPlatformBranding();
+  }
+
   function publicUrl(store) {
     const url = new URL('../../', window.location.href);
     url.searchParams.set('loja', store.slug);
@@ -73,10 +100,10 @@
     render();
   }
 
-  async function uploadStoreLogo(store, file) {
+  async function uploadStoreLogo(store, file, folder = 'logos', suggestedName = '') {
     if (!file) return '';
     SupabaseStore.chooseStore(store);
-    return SupabaseStore.uploadImage(file, 'logos');
+    return SupabaseStore.uploadImage(file, folder, suggestedName || `${store.name}-logo`);
   }
 
   function memberMarkup(store) {
@@ -108,10 +135,9 @@
         <section class="panel store-config"><h3>Empresa e disponibilidade</h3><form data-store-form="${store.id}">
           <div class="store-logo-editor">
             ${storeLogo(store, 'store-logo-preview')}
-            <div class="store-logo-copy"><b>Logo da empresa</b><small>PNG, JPG ou WebP. Otimização automática para carregamento rápido.</small>
-              <div class="store-logo-actions"><label class="logo-upload-button">${store.logo_url ? 'Trocar logo' : 'Enviar logo'}<input type="file" data-store-logo-upload="${store.id}" accept="image/png,image/jpeg,image/webp"></label>${store.logo_url ? `<button type="button" data-remove-store-logo="${store.id}">Remover</button>` : ''}</div>
+            <div class="store-logo-copy"><b>Logo da empresa</b><small>Sugestão: 1000 × 500 px · PNG ou WebP</small>
+              <div class="store-logo-actions"><label class="logo-upload-button">Trocar logo<input type="file" data-store-logo-upload="${store.id}" accept="image/png,image/jpeg,image/webp"></label>${store.logo_url ? `<button type="button" data-remove-store-logo="${store.id}">Excluir</button>` : ''}</div>
             </div>
-            <label class="store-logo-url">URL da logo<input name="logoUrl" type="url" value="${esc(store.logo_url || '')}" placeholder="https://..."></label>
           </div>
           <div class="store-settings"><label>Nome<input name="name" value="${esc(store.name)}" required></label><label>Endereço<input name="slug" value="${esc(store.slug)}" required></label>
           <label>Situação<select name="status" ${disabled}><option value="active" ${store.status === 'active' ? 'selected' : ''}>Ativa</option><option value="suspended" ${store.status === 'suspended' ? 'selected' : ''}>Suspensa</option><option value="archived" ${store.status === 'archived' ? 'selected' : ''}>Arquivada</option></select></label>
@@ -133,6 +159,7 @@
   }
 
   function render() {
+    applyPlatformBranding();
     updateMetrics();
     const normalized = query.toLowerCase();
     const stores = platform.stores.filter(store =>
@@ -150,6 +177,7 @@
 
   async function boot() {
     if (!SupabaseStore.configured) return showLoginError('Configure o Supabase antes de usar a central.');
+    try { await loadPublicBranding(); } catch (_) {}
     const session = await SupabaseStore.getSession();
     if (!session) return;
     if (!(await SupabaseStore.isPlatformAdmin())) return showLoginError('Este usuário não é o administrador central do Seu Food.');
@@ -170,6 +198,31 @@
     finally { button.disabled = false; }
   };
   $('#logout').onclick = async () => { await SupabaseStore.signOut(); location.reload(); };
+  $('#platform-logo-upload').onchange = async event => {
+    const file = event.target.files?.[0];
+    const demoStore = platform.stores.find(store => store.is_demo) || platform.stores.find(store => store.id === DEMO_STORE_ID);
+    if (!file || !demoStore) return;
+    const holder = event.target.closest('.platform-logo-actions');
+    holder?.classList.add('busy');
+    try {
+      const logoUrl = await uploadStoreLogo(demoStore, file, 'plataforma', 'seu-food-logo-painel');
+      const result = await invoke('update_platform_branding', { logoUrl });
+      platform = result.platform;
+      render();
+      notice('Logo do painel atualizada.');
+    } catch (error) { notice(error.message, true); }
+    finally { holder?.classList.remove('busy'); event.target.value = ''; }
+  };
+  $('#platform-logo-remove').onclick = async event => {
+    event.target.disabled = true;
+    try {
+      const result = await invoke('update_platform_branding', { logoUrl: '' });
+      platform = result.platform;
+      render();
+      notice('Logo do painel excluída.');
+    } catch (error) { notice(error.message, true); }
+    finally { event.target.disabled = false; }
+  };
   $('#store-search').oninput = event => { query = event.target.value.trim(); render(); };
   $('#store-status-filter').onchange = event => { statusFilter = event.target.value; render(); };
   $('#open-new-store').onclick = () => { $('#new-store-dialog').hidden = false; $('#new-store-name').focus(); };
@@ -228,8 +281,7 @@
           name: data.get('name'), slug: data.get('slug'), status: data.get('status'),
           storefrontEnabled: data.get('storefrontEnabled') === 'on', planName: data.get('planName'),
           accessExpiresAt: data.get('accessExpiresAt'), maxProducts: data.get('maxProducts'),
-          maxOrdersMonth: data.get('maxOrdersMonth'), maxStorageMb: data.get('maxStorageMb'),
-          logoUrl: data.get('logoUrl')
+          maxOrdersMonth: data.get('maxOrdersMonth'), maxStorageMb: data.get('maxStorageMb')
         });
         platform = result.platform;
         notice('Empresa atualizada.');

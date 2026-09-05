@@ -433,6 +433,10 @@ body.dialog-open{overflow:hidden}
 .free-shipping-label-field[hidden]{display:none!important}
 .option-thumb.no-image{background:#fff;color:transparent}
 
+/* Imagens: interface direta, sem expor URLs técnicas. */
+.image-upload-actions{margin-top:9px;display:flex;align-items:center;gap:8px}.image-upload-actions .upload{flex:1;margin:0!important}.image-delete-button{min-height:38px;padding:8px 11px;border:1px solid #efc8cd;border-radius:8px;background:#fff1f2;color:#a2182a;font-size:9px;font-weight:900;white-space:nowrap}.image-size-hint{display:block;margin-top:6px;color:#807684;font-size:8px!important;font-weight:600!important;line-height:1.35}.category-image-actions,.option-image-actions{min-width:0;display:grid;gap:5px}.category-image-actions .category-upload,.option-image-actions .option-upload{margin:0!important}.category-image-actions .image-delete-button,.option-image-actions .image-delete-button{width:100%;min-height:30px;padding:5px 7px}.option-row{grid-template-columns:48px minmax(150px,1fr) minmax(104px,auto) 96px auto auto!important}.notification-fields>.image-size-hint{margin-top:5px}.info-icon-row .image-size-hint{margin:0}.product-media>.image-size-hint{margin-top:7px}
+@media(max-width:680px){.image-upload-actions{align-items:stretch;flex-direction:column}.image-upload-actions>*{width:100%}.category-image-actions{grid-column:2}.category-active{grid-column:2}.option-image-actions{grid-column:2}.option-row .option-image-actions+.option-price-field{grid-column:1/-1}.option-row .remove-option{grid-column:2!important}}
+
 /* Catálogo administrativo organizado por categorias. */
 .product-catalog-toolbar{
   margin-bottom:10px;

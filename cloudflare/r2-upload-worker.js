@@ -1,7 +1,7 @@
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-Upload-Folder, X-Store-Id',
+  'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-Upload-Folder, X-Upload-Filename, X-Store-Id',
   'Access-Control-Max-Age': '86400'
 };
 
@@ -11,6 +11,9 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), {
 });
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const seoSlug = value => String(value || 'imagem').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .toLowerCase().replace(/\.[a-z0-9]{2,5}$/i, '').replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '').slice(0, 120) || 'imagem';
 
 async function supabaseRequest(env, token, path, init = {}) {
   const url = `${String(env.SUPABASE_URL || '').replace(/\/+$/, '')}${path}`;
@@ -94,7 +97,9 @@ export default {
     }
     const folder = String(request.headers.get('X-Upload-Folder') || 'geral')
       .toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 40) || 'geral';
-    const key = `${storeId}/${folder}/${crypto.randomUUID()}.webp`;
+    const requestedName = seoSlug(request.headers.get('X-Upload-Filename'));
+    const uniqueId = crypto.randomUUID().replace(/-/g, '').slice(0, 10);
+    const key = `${storeId}/${folder}/${requestedName}-${uniqueId}.webp`;
     await env.IMAGES.put(key, bytes, {
       httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' },
       customMetadata: { storeId, uploadedBy: access.userId }

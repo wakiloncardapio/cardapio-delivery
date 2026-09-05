@@ -422,7 +422,7 @@
     return optimized;
   }
 
-  async function uploadImage(file, folder = 'geral') {
+  async function uploadImage(file, folder = 'geral', suggestedName = '') {
     const db = getClient();
     if (!db) throw new Error('Configure o Supabase antes de enviar imagens.');
     if (!file?.type?.startsWith('image/')) throw new Error('Selecione uma imagem válida.');
@@ -433,13 +433,18 @@
     const optimized = await optimizeImage(file);
     if (optimized.size > 5 * 1024 * 1024) throw new Error('A imagem ficou maior que 5 MB mesmo após a otimização.');
     const safeFolder = String(folder || 'geral').replace(/[^a-z0-9_-]/gi, '').toLowerCase();
+    const safeFilename = [store.slug, suggestedName || file.name || 'imagem']
+      .filter(Boolean).join('-').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase().replace(/\.[a-z0-9]{2,5}$/i, '').replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '').slice(0, 120) || 'imagem';
     const workerUrl = String(window.CARDAPIO_R2_CONFIG?.workerUrl || '').replace(/\/+$/, '');
     if (!/^https:\/\//i.test(workerUrl)) throw new Error('Configure o Worker do Cloudflare R2 antes de enviar imagens.');
 
     const headers = {
       Authorization: `Bearer ${sessionData.session.access_token}`,
       'Content-Type': 'image/webp',
-      'X-Upload-Folder': safeFolder || 'geral'
+      'X-Upload-Folder': safeFolder || 'geral',
+      'X-Upload-Filename': safeFilename
     };
     // O Worker antigo continua funcionando enquanto a migração multiempresa não foi ativada.
     if (!store.legacy) headers['X-Store-Id'] = store.id;
