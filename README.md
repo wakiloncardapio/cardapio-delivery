@@ -2,6 +2,8 @@
 
 Base de demonstração para operar vários cardápios independentes com um único código. Cada empresa possui seu próprio catálogo, pedidos, configurações, pessoas autorizadas, páginas e domínios. A loja atual permanece como demonstração e não existe cobrança, vencimento ou limite automático nesta fase.
 
+A fundação multiempresa está publicada no código. A ativação no banco só acontece depois da execução manual da migração 004, preservando o ambiente atual até essa etapa.
+
 ## Endereços da plataforma
 
 - Cardápio de demonstração: `/` ou `/?loja=demonstracao`
