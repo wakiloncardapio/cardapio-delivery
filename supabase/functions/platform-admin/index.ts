@@ -139,7 +139,7 @@ async function listPlatform(db: any) {
   const failures = attempts.filter((attempt: any) => ['rejected','error'].includes(attempt.status)).slice(0, 100);
   return {
     stores: (stores || []).map((store: any) => ({ ...store, logo_url: logos[store.id] || '' })),
-    members: (members || []).map(member => ({ ...member, email: emails[member.user_id] || '' })),
+    members: (members || []).map((member: any) => ({ ...member, email: emails[member.user_id] || '' })),
     domains: domains || [],
     branding: { logo_url: String(demoSettings.platformLogoUrl || '') },
     commerce: {
