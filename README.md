@@ -8,8 +8,9 @@ Modelo derivado do cardápio original, mantendo layout, cores e funcionalidades.
 2. Execute `database/supabase.sql` no SQL Editor.
 3. Crie o usuário administrador em **Authentication > Users** e desative cadastros públicos.
 4. Preencha `assets/js/supabase-config.js` somente com a URL e a chave pública/publicável do novo projeto.
-5. Edite os dados iniciais de `data/config/store.json` ou faça isso pelo painel.
-6. Revise `politicas.html`, `robots.txt` e `sitemap.xml` para o domínio do novo estabelecimento.
+5. Configure `assets/js/r2-config.js` com a URL do Worker protegido que envia imagens ao Cloudflare R2.
+6. Edite os dados iniciais de `data/config/store.json` ou faça isso pelo painel.
+7. Revise `politicas.html`, `robots.txt` e `sitemap.xml` para o domínio do novo estabelecimento.
 
 Nunca coloque a chave `service_role`, token do Mercado Pago, token da Meta ou senha no código público.
 

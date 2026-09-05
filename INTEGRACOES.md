@@ -2,6 +2,10 @@
 
 O GitHub Pages publica somente a interface. Tokens da Meta e de gateways **nunca** devem ser colocados em HTML, JavaScript público ou no painel. As funções deste projeto usam Supabase Edge Functions para manter as credenciais protegidas.
 
+## Armazenamento de imagens no Cloudflare R2
+
+O painel envia imagens otimizadas ao Worker configurado em `assets/js/r2-config.js`. O Worker valida a sessão do administrador no Supabase, grava o arquivo no binding R2 `IMAGES` e devolve somente a URL pública. Tokens e chaves privadas do R2 não devem ser colocados no GitHub.
+
 ## 1. Preparar o banco
 
 Execute, nesta ordem, no SQL Editor do Supabase:

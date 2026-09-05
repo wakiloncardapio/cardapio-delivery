@@ -312,19 +312,28 @@
     const optimized = await optimizeImage(file);
     if (optimized.size > 5 * 1024 * 1024) throw new Error('A imagem ficou maior que 5 MB mesmo após a otimização.');
     const safeFolder = String(folder || 'geral').replace(/[^a-z0-9_-]/gi, '').toLowerCase();
-    const path = `${safeFolder}/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.webp`;
-    const { error } = await db.storage.from('menu-images').upload(path, optimized, {
-      cacheControl: '31536000',
-      contentType: 'image/webp',
-      upsert: false
-    });
-    if (error) {
-      const missingBucket = /bucket|row-level|policy|not found/i.test(error.message || '');
-      throw new Error(missingBucket
-        ? 'O armazenamento de imagens ainda não está liberado. Execute novamente database/supabase.sql no Supabase.'
-        : (error.message || 'Não foi possível enviar a imagem.'));
+    const workerUrl = String(window.CARDAPIO_R2_CONFIG?.workerUrl || '').replace(/\/+$/, '');
+    if (!/^https:\/\//i.test(workerUrl)) throw new Error('Configure o Worker do Cloudflare R2 antes de enviar imagens.');
+
+    let response;
+    try {
+      response = await fetch(`${workerUrl}/upload`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${sessionData.session.access_token}`,
+          'Content-Type': 'image/webp',
+          'X-Upload-Folder': safeFolder || 'geral'
+        },
+        body: optimized
+      });
+    } catch (_) {
+      throw new Error('Não foi possível acessar o Worker do Cloudflare R2.');
     }
-    return db.storage.from('menu-images').getPublicUrl(path).data.publicUrl;
+
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || `Falha ao enviar a imagem ao R2 (${response.status}).`);
+    if (!/^https:\/\//i.test(result.url || '')) throw new Error('O Worker não devolveu a URL pública da imagem.');
+    return result.url;
   }
 
   async function signIn(email, password) {
