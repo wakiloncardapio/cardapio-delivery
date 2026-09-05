@@ -1,0 +1,108 @@
+{
+  "storeName": "Seu Delivery",
+  "tagline": "Seu pedido do seu jeito, rápido e caprichado",
+  "heroEyebrow": "✦ DO SEU JEITO",
+  "heroTitle": "Seu pedido",
+  "heroHighlight": "do seu jeito.",
+  "menuEyebrow": "ESCOLHA O SEU",
+  "menuTitle": "Cardápio",
+  "searchPlaceholder": "Buscar produto ou acompanhamento",
+  "whatsappEyebrow": "PREFERE PEDIR DIRETO?",
+  "whatsappTitle": "Fale com a gente no WhatsApp",
+  "whatsappButtonText": "CHAMAR AGORA →",
+  "logoUrl": "",
+  "bannerUrl": "https://images.pexels.com/photos/14167805/pexels-photo-14167805.jpeg?auto=compress&cs=tinysrgb&w=1600",
+  "whatsapp": "",
+  "orderEmail": "",
+  "address": "",
+  "city": "Sua cidade - UF",
+  "establishmentName": "Seu Delivery",
+  "locationName": "Sua cidade - UF",
+  "cnpj": "",
+  "contactPhone": "",
+  "publicEmail": "",
+  "instagramUrl": "",
+  "facebookUrl": "",
+  "tiktokUrl": "",
+  "seoTitle": "Cardápio on-line | Seu Delivery",
+  "seoDescription": "Escolha seus produtos e faça seu pedido on-line com rapidez e segurança.",
+  "faviconUrl": "assets/images/favicon/favicon.svg",
+  "deliveryFee": 7,
+  "deliveryZones": [],
+  "blockedPostalCodes": [],
+  "minOrder": 15,
+  "estimatedTime": "35–50 min",
+  "paymentSummary": "PIX cartão ou dinheiro",
+  "infoStripIcons": {
+    "service": "",
+    "time": "",
+    "delivery": "",
+    "payment": ""
+  },
+  "dailyOffer": {
+    "enabled": false,
+    "title": "",
+    "description": "",
+    "buttonText": "APROVEITAR →",
+    "link": "#cardapio",
+    "imageUrl": ""
+  },
+  "open": true,
+  "statusMode": "open",
+  "timezone": "America/Sao_Paulo",
+  "hours": {
+    "sun": { "enabled": true, "open": "00:00", "close": "23:59" },
+    "mon": { "enabled": true, "open": "00:00", "close": "23:59" },
+    "tue": { "enabled": true, "open": "00:00", "close": "23:59" },
+    "wed": { "enabled": true, "open": "00:00", "close": "23:59" },
+    "thu": { "enabled": true, "open": "00:00", "close": "23:59" },
+    "fri": { "enabled": true, "open": "00:00", "close": "23:59" },
+    "sat": { "enabled": true, "open": "00:00", "close": "23:59" }
+  },
+  "pixKey": "",
+  "paymentLink": "",
+  "primaryColor": "#620853",
+  "accentColor": "#fcd307",
+  "brandBrightColor": "#620853",
+  "autoOpenWhatsApp": false,
+  "orderRedirectEnabled": false,
+  "orderRedirectUrl": "",
+  "crmNotifications": {
+    "confirmed": {
+      "enabled": true,
+      "title": "Pedido confirmado! 🎉",
+      "message": "Olá, {primeiro_nome}! Seu pedido foi confirmado e já está sendo preparado com todo carinho. Assim que sair para entrega, avisaremos você por e-mail.",
+      "imageUrl": ""
+    },
+    "preparing": {
+      "enabled": true,
+      "title": "Preparando seu pedido 💜",
+      "message": "{primeiro_nome}, seu pedido já está sendo preparado com muito carinho.",
+      "imageUrl": ""
+    },
+    "out_for_delivery": {
+      "enabled": true,
+      "title": "Seu pedido está a caminho! 🛵",
+      "message": "{primeiro_nome}, seu pedido saiu para entrega. Fique de olho!",
+      "imageUrl": ""
+    },
+    "completed": {
+      "enabled": true,
+      "title": "Pedido concluído! 💛",
+      "message": "{primeiro_nome}, seu pedido foi concluído. Obrigado pela preferência!",
+      "imageUrl": ""
+    },
+    "cancelled": {
+      "enabled": true,
+      "title": "Pedido cancelado",
+      "message": "{primeiro_nome}, o pedido {pedido} foi cancelado. Fale conosco se precisar de ajuda.",
+      "imageUrl": ""
+    }
+  },
+  "whatsappCloudEnabled": false,
+  "gatewayEnabled": false,
+  "gatewayProvider": "mercadopago",
+  "metaPixelId": "",
+  "gtmId": "",
+  "ga4Id": ""
+}

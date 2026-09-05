@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <script>if(location.protocol==='http:'&&!/^(localhost|127\.0\.0\.1)$/i.test(location.hostname)){location.replace('https://'+location.host+location.pathname+location.search+location.hash)}</script>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <script src="assets/js/consent.js?v=20260830-consent"></script>
+  <title>Cardápio on-line | Seu Delivery</title>
+  <meta name="description" content="Escolha seus produtos e faça seu pedido on-line com rapidez e segurança.">
+  <meta name="theme-color" content="#620853">
+  <link rel="canonical" href="./">
+  <meta property="og:site_name" content="Seu Delivery">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:title" content="Cardápio on-line | Seu Delivery">
+  <meta property="og:description" content="Escolha seus produtos e faça seu pedido on-line.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="">
+  <meta property="og:image" content="">
+  <meta property="og:image:secure_url" content="">
+  <meta property="og:image:alt" content="Cardápio Seu Delivery">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Cardápio on-line | Seu Delivery">
+  <meta name="twitter:description" content="Escolha seus produtos e faça seu pedido on-line.">
+  <meta name="twitter:image" content="">
+  <link rel="icon" type="image/svg+xml" href="assets/images/favicon/favicon.svg">
+  <link rel="manifest" href="manifest.json">
+<script type="application/ld+json" id="local-business-schema">
+  {"@context":"https://schema.org","@type":"Restaurant","name":"Seu Delivery","priceRange":"R$","address":{"@type":"PostalAddress","addressCountry":"BR"}}
+  </script>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="stylesheet" href="assets/css/style.css?v=20260902-card-change">
+  <link rel="stylesheet" href="assets/css/theme-custom.css?v=20260831-selection-cart-v7">
+  <link rel="stylesheet" href="assets/css/consent.css?v=20260830-bannerfix">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#inicio"><span class="brand-mark">SD</span><span><b data-store-name>Seu Delivery</b><small>DELIVERY PRÓPRIO</small></span></a>
+    <nav><a href="#cardapio">Cardápio</a><a href="#entrega">Entrega</a><a id="nav-whatsapp" target="_blank" rel="noopener">Contato</a></nav>
+    <button class="cart-toggle" type="button" data-open-cart aria-label="Abrir pedido">🛍 <span>Meu pedido</span><b data-cart-count>0</b></button>
+  </header>
+
+  <main>
+    <section class="hero" id="inicio">
+      <img id="hero-image" alt="Imagem do estabelecimento">
+      <div class="hero-shade"></div>
+      <div class="hero-copy">
+        <p id="hero-eyebrow">✦ DO SEU JEITO</p>
+        <h1><span id="hero-title">Seu pedido</span><br><em id="hero-highlight">do seu jeito.</em></h1>
+        <span id="store-tagline">Seu pedido do seu jeito, rápido e caprichado</span>
+        <div><a class="cta" href="#cardapio">VER CARDÁPIO →</a><button class="open-status" id="store-status" type="button" data-open-hours aria-haspopup="dialog">Aberto agora</button></div>
+      </div>
+    </section>
+
+    <section class="info-strip" id="entrega" aria-label="Informações da entrega">
+      <article data-info-card="service"><i data-info-icon="service" data-fallback="📍">📍</i><span><small>ATENDIMENTO</small><b id="store-city">Sua cidade - UF</b></span></article>
+      <article class="info-hours"><i data-info-icon="time" data-fallback="◷">◷</i><span><small>TEMPO ESTIMADO</small><b id="store-time">35–50 min</b><button type="button" class="hours-link" data-open-hours>Ver horários</button></span></article>
+      <article data-info-card="delivery"><i data-info-icon="delivery" data-fallback="🛵">🛵</i><span><small>TAXA A PARTIR DE</small><b id="store-fee">R$ 7,00</b></span></article>
+      <article data-info-card="payment"><i data-info-icon="payment" data-fallback="💳">💳</i><span><small>PAGAMENTO</small><b id="store-payment">PIX cartão ou dinheiro</b></span></article>
+    </section>
+
+    <section class="daily-offer" id="daily-offer" hidden aria-label="Oferta do dia">
+      <div class="daily-offer-image" id="daily-offer-image" hidden></div>
+      <div class="daily-offer-copy"><small>OFERTA DO DIA</small><h2 id="daily-offer-title"></h2><p id="daily-offer-description"></p></div>
+      <a id="daily-offer-link" href="#cardapio">APROVEITAR →</a>
+    </section>
+
+    <section class="menu-section" id="cardapio">
+      <header class="section-title"><div><small id="menu-eyebrow">ESCOLHA O SEU</small><h2 id="menu-title">Cardápio</h2></div><div class="search" role="search"><input id="search" type="text" inputmode="search" autocomplete="off" placeholder="Buscar produto ou acompanhamento" aria-label="Buscar produto ou acompanhamento"><button type="button" id="focus-search" aria-label="Ativar busca"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg></button></div></header>
+      <div class="categories" id="categories" role="tablist"></div>
+      <div class="products" id="products"></div>
+    </section>
+
+    <section class="whatsapp-callout"><div><i>◉</i><span><small id="whatsapp-eyebrow">PREFERE PEDIR DIRETO?</small><b id="whatsapp-title">Fale com a gente no WhatsApp</b></span></div><a id="callout-whatsapp" target="_blank" rel="noopener"><span id="whatsapp-button-text">CHAMAR AGORA →</span></a></section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-main">
+      <div class="brand"><span class="brand-mark">SD</span><span><b data-store-name>Seu Delivery</b><small>FEITO COM CAPRICHO</small></span></div>
+      <div class="footer-business">
+        <div class="footer-business-name"><small>ESTABELECIMENTO</small><b id="footer-establishment">Seu Delivery</b></div>
+        <div class="footer-business-grid">
+          <div><small>ENDEREÇO</small><span id="footer-address">Configure no painel</span><span id="footer-location">Sua cidade - UF</span></div>
+          <div id="footer-contact"><small>CONTATO</small><a id="footer-phone"></a><a id="footer-email"></a></div>
+        </div>
+      </div>
+      <div class="footer-social" id="footer-social" aria-label="Redes sociais"></div>
+    </div>
+    <div class="footer-bottom"><nav><a href="politicas.html#privacidade">Privacidade</a><a href="politicas.html#termos">Termos de uso</a><a href="politicas.html#reembolso">Reembolso e cancelamento</a><a href="politicas.html#cookies">Cookies</a></nav><span>© 2026 Seu Delivery</span></div>
+  </footer>
+
+  <div class="overlay hours-overlay" id="hours-overlay" hidden>
+    <section class="modal hours-modal" role="dialog" aria-modal="true" aria-labelledby="hours-title">
+      <button class="modal-close" type="button" data-close-hours aria-label="Fechar">×</button>
+      <header><small>PLANEJE SEU PEDIDO</small><h2 id="hours-title">Horários de funcionamento</h2><p id="hours-store-status"></p></header>
+      <div class="hours-list" id="hours-list"></div>
+      <footer><button class="primary" type="button" data-close-hours>Entendi</button></footer>
+    </section>
+  </div>
+
+  <div class="overlay" id="product-overlay" hidden>
+    <section class="modal product-modal" role="dialog" aria-modal="true" aria-labelledby="product-name">
+      <button class="product-presentation-close" type="button" data-close-product aria-label="Fechar seleção do produto">×</button>
+      <div class="product-modal-head"><div class="product-presentation-media"><img id="product-image" alt="" decoding="async" fetchpriority="high"><span class="product-modal-free-badge" id="product-modal-free-badge" hidden><img src="assets/images/icone-capacete-entrega-gratis.svg" alt=""> <b>Grátis</b></span></div><div class="product-presentation-copy"><h2 id="product-name"></h2><p id="product-description"></p><b id="product-base-price"></b></div></div>
+      <header class="product-step-head"><div><small id="product-step-label">Etapa 1 de 1</small><b id="product-step-title">Escolha as opções</b></div></header>
+      <div class="addon-list" id="addon-list" aria-live="polite"></div>
+      <label class="field notes" id="product-notes" hidden><span>Alguma observação?</span><textarea id="item-notes" placeholder="Ex: separar granola sem leite condensado"></textarea></label>
+      <p class="error" id="product-error" role="alert" hidden></p>
+      <footer class="modal-footer product-presentation-footer"><div class="product-action-summary"><b id="product-action-price">R$ 0,00</b><span>• <em id="product-delivery-label">Com entrega</em></span></div><div class="product-actions"><div class="quantity" id="product-quantity" hidden><button type="button" data-qty-minus aria-label="Diminuir quantidade">−</button><b id="item-quantity">1</b><button type="button" data-qty-plus aria-label="Aumentar quantidade">+</button></div><button type="button" class="secondary" id="product-step-back" hidden>Voltar</button><button type="button" class="primary" id="add-to-cart">Continuar</button></div></footer>
+    </section>
+  </div>
+
+  <aside class="cart" id="cart" aria-hidden="true">
+    <header><div><h2>Seu pedido</h2><p>Confira os itens antes de finalizar</p></div><button data-close-cart aria-label="Fechar">×</button></header>
+    <div class="cart-items" id="cart-items"></div>
+    <footer id="cart-footer"><div><span>Subtotal</span><b id="cart-subtotal">R$ 0,00</b></div><small id="minimum-order"></small><button class="primary" id="start-checkout">Finalizar pedido →</button></footer>
+  </aside>
+  <div class="backdrop" id="cart-backdrop" hidden></div>
+
+  <div class="overlay" id="checkout-overlay" hidden>
+    <section class="modal checkout-modal" role="dialog" aria-modal="true">
+      <button class="modal-close" id="close-checkout" aria-label="Fechar">×</button>
+      <header class="checkout-head"><button id="checkout-back" aria-label="Voltar">←</button><div><h2>Finalizar pedido</h2><p id="checkout-step-label">Etapa 1 de 4</p></div><span><i id="checkout-progress"></i></span></header>
+      <form id="checkout-form">
+        <div class="checkout-step" data-step="1">
+          <div class="form-grid">
+            <label class="field full"><span>Seu WhatsApp *</span><input name="phone" inputmode="tel" autocomplete="tel" required placeholder="(00) 99999-9999"></label>
+            <div class="returning-customer full" id="returning-customer" hidden>✓ Encontramos seus dados salvos neste aparelho. Confirme e continue.</div>
+            <label class="field"><span>Seu nome *</span><input name="name" autocomplete="name" required></label>
+            <label class="field"><span>E-mail para confirmação *</span><input name="email" type="email" autocomplete="email" required placeholder="voce@exemplo.com"></label>
+            <label class="remember-profile full"><input type="checkbox" name="rememberProfile" value="1" checked><span><b>Lembrar meus dados neste aparelho</b><small>Na próxima compra, digite apenas seu telefone para preencher nome, e-mail e endereço.</small></span></label>
+            <label class="marketing-consent full"><input type="checkbox" name="marketingConsent" value="1"><span><b id="marketing-consent-label">Quero receber ofertas deste estabelecimento</b><small>Opcional. Você poderá pedir para sair da lista quando quiser.</small></span></label><p class="privacy-consent full">Ao continuar, você concorda com os <a href="politicas.html#termos" target="_blank">Termos de uso</a> e a <a href="politicas.html#privacidade" target="_blank">Política de privacidade</a>.</p>
+          </div>
+        </div>
+        <div class="checkout-step" data-step="2" hidden>
+          <div class="fulfillment"><label><input type="radio" name="fulfillment" value="delivery" checked><span>🛵 <b>Receber em casa</b><small>Com taxa de entrega</small></span></label><label><input type="radio" name="fulfillment" value="pickup"><span>🏪 <b>Retirar no local</b><small>Sem taxa de entrega</small></span></label></div>
+          <div class="form-grid" id="address-fields"><label class="field"><span>CEP *</span><input name="zip" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000"></label><label class="field"><span>Cidade *</span><input name="city" value="Sua cidade - UF" autocomplete="address-level2"></label><label class="field full"><span>Rua ou Avenida *</span><input name="street" autocomplete="street-address"></label><label class="field"><span>Número *</span><input name="number"></label><label class="field"><span>Complemento</span><input name="complement"></label><label class="field"><span>Bairro *</span><input name="neighborhood" autocomplete="address-level3"></label><label class="field"><span>Referência</span><input name="reference"></label><p class="delivery-quote full" id="delivery-quote">Informe o CEP e o bairro para calcular a entrega.</p><div class="location-assist full"><button type="button" id="use-location">⌖ Marcar minha localização atual</button><span id="location-status">Opcional: facilita encontrar o endereço na entrega.</span><input type="hidden" name="latitude"><input type="hidden" name="longitude"></div></div>
+        </div>
+        <div class="checkout-step" data-step="3" hidden>
+          <h3>Como deseja pagar?</h3><div class="payments" id="payment-options"></div>
+          <section class="change-panel" id="change-field" hidden><b>Precisa de troco?</b><div><label><input type="radio" name="changeNeeded" value="no" checked><span>Não preciso</span></label><label><input type="radio" name="changeNeeded" value="yes"><span>Sim, preciso</span></label></div><label class="field" id="change-amount" hidden><span>Troco para quanto?</span><input name="changeFor" inputmode="decimal" placeholder="Ex: R$ 100,00"></label></section>
+          <label class="field"><span>Observações gerais</span><textarea name="notes"></textarea></label>
+          <div class="reservation-fields" id="reservation-fields" hidden><div><small>LOJA FECHADA</small><h3>Reserve seu pedido</h3><p>Escolha quando deseja receber. A reserva só será válida após a confirmação da loja por e-mail.</p></div><label class="field"><span>Data e horário *</span><input id="reservation-at" name="reservationAt" type="datetime-local"></label></div>
+          <div class="summary" id="order-summary"></div>
+        </div>
+        <div class="checkout-step" data-step="4" hidden>
+          <div class="checkout-review-head"><small>CONFIRA ANTES DE PAGAR</small><h3>Está tudo certo?</h3><p>Revise seus dados, endereço, produtos e forma de pagamento.</p></div>
+          <div class="checkout-review" id="checkout-review"></div>
+        </div>
+        <p class="error" id="checkout-error" hidden></p>
+        <footer><button class="primary" id="checkout-next" type="button">Continuar →</button><button class="primary" id="checkout-submit" type="submit" hidden>Confirmar pedido</button></footer>
+      </form>
+      <div class="success" id="order-success" hidden></div>
+    </section>
+  </div>
+
+  <button class="mobile-cart" data-open-cart hidden><span>🛍 <b data-cart-count>0</b></span><strong>Ver pedido</strong><em id="mobile-total">R$ 0,00</em></button>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="assets/js/supabase-config.js"></script>
+  <script src="assets/js/supabase-store.js?v=20260902-confirmed-conversion"></script>
+  <script src="assets/js/api.js?v=20260902-ga-session"></script>
+  <script src="assets/js/cart.js?v=20260831-free-delivery"></script>
+  <script src="assets/js/checkout.js?v=20260902-ga-session"></script>
+  <script src="assets/js/app.js?v=20260902-ga-products"></script>
+</body>
+</html>

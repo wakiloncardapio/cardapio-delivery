@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+# Depois de definir o domínio, adicione aqui a URL completa do sitemap.

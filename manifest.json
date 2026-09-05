@@ -1,0 +1,16 @@
+{
+  "name": "Seu Delivery",
+  "short_name": "Seu Delivery",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#fffaf2",
+  "theme_color": "#620853",
+  "icons": [
+    {
+      "src": "assets/images/favicon/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

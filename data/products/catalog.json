@@ -1,0 +1,298 @@
+[
+  {
+    "id": "acai-classico",
+    "name": "Açaí Clássico",
+    "description": "Açaí cremoso montado na hora. Escolha o tamanho e seus complementos favoritos.",
+    "categoryId": "acai",
+    "price": 16.9,
+    "imageUrl": "https://images.pexels.com/photos/14167805/pexels-photo-14167805.jpeg?auto=compress&cs=tinysrgb&w=900",
+    "featured": true,
+    "active": true,
+    "badge": "Mais pedido",
+    "addonGroups": [
+      {
+        "id": "size",
+        "name": "Escolha o tamanho",
+        "required": true,
+        "min": 1,
+        "max": 1,
+        "priceMode": "final",
+        "options": [
+          {
+            "id": "300",
+            "name": "300 ml",
+            "price": 16.9
+          },
+          {
+            "id": "500",
+            "name": "500 ml",
+            "price": 24.9
+          },
+          {
+            "id": "700",
+            "name": "700 ml",
+            "price": 30.9
+          }
+        ]
+      },
+      {
+        "id": "fruit",
+        "name": "Frutas",
+        "required": false,
+        "min": 0,
+        "max": 3,
+        "options": [
+          {
+            "id": "banana",
+            "name": "Banana",
+            "price": 2
+          },
+          {
+            "id": "strawberry",
+            "name": "Morango",
+            "price": 3.5
+          },
+          {
+            "id": "kiwi",
+            "name": "Kiwi",
+            "price": 4
+          }
+        ]
+      },
+      {
+        "id": "extras",
+        "name": "Complementos",
+        "required": false,
+        "min": 0,
+        "max": 5,
+        "options": [
+          {
+            "id": "granola",
+            "name": "Granola",
+            "price": 1.5
+          },
+          {
+            "id": "milk",
+            "name": "Leite em pó",
+            "price": 2
+          },
+          {
+            "id": "pacoca",
+            "name": "Paçoca",
+            "price": 2
+          },
+          {
+            "id": "hazelnut",
+            "name": "Creme de avelã",
+            "price": 5
+          },
+          {
+            "id": "condensed",
+            "name": "Leite condensado",
+            "price": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "acai-especial",
+    "name": "Especial da Casa",
+    "description": "500 ml com banana morango granola leite em pó e leite condensado.",
+    "categoryId": "acai",
+    "price": 29.9,
+    "imageUrl": "https://images.pexels.com/photos/14167805/pexels-photo-14167805.jpeg?auto=compress&cs=tinysrgb&w=900",
+    "featured": true,
+    "active": true,
+    "badge": "Completo",
+    "addonGroups": [
+      {
+        "id": "extras",
+        "name": "Complementos",
+        "required": false,
+        "min": 0,
+        "max": 5,
+        "options": [
+          {
+            "id": "granola",
+            "name": "Granola",
+            "price": 1.5
+          },
+          {
+            "id": "milk",
+            "name": "Leite em pó",
+            "price": 2
+          },
+          {
+            "id": "pacoca",
+            "name": "Paçoca",
+            "price": 2
+          },
+          {
+            "id": "hazelnut",
+            "name": "Creme de avelã",
+            "price": 5
+          },
+          {
+            "id": "condensed",
+            "name": "Leite condensado",
+            "price": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "combo-casal",
+    "name": "Combo Casal",
+    "description": "2 açaís de 500 ml com até 3 complementos em cada.",
+    "categoryId": "combos",
+    "price": 49.9,
+    "imageUrl": "https://images.pexels.com/photos/14167805/pexels-photo-14167805.jpeg?auto=compress&cs=tinysrgb&w=900",
+    "featured": true,
+    "active": true,
+    "badge": "Economize R$ 8",
+    "addonGroups": [
+      {
+        "id": "extras",
+        "name": "Complementos",
+        "required": false,
+        "min": 0,
+        "max": 5,
+        "options": [
+          {
+            "id": "granola",
+            "name": "Granola",
+            "price": 1.5
+          },
+          {
+            "id": "milk",
+            "name": "Leite em pó",
+            "price": 2
+          },
+          {
+            "id": "pacoca",
+            "name": "Paçoca",
+            "price": 2
+          },
+          {
+            "id": "hazelnut",
+            "name": "Creme de avelã",
+            "price": 5
+          },
+          {
+            "id": "condensed",
+            "name": "Leite condensado",
+            "price": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hamburguer",
+    "name": "Hambúrguer Artesanal",
+    "description": "Pão brioche carne 150 g queijo salada e molho especial.",
+    "categoryId": "lanches",
+    "price": 24.9,
+    "imageUrl": "",
+    "featured": false,
+    "active": true,
+    "badge": "",
+    "addonGroups": [
+      {
+        "id": "burger-extra",
+        "name": "Adicionais",
+        "required": false,
+        "min": 0,
+        "max": 3,
+        "options": [
+          {
+            "id": "bacon",
+            "name": "Bacon",
+            "price": 4
+          },
+          {
+            "id": "cheese",
+            "name": "Queijo extra",
+            "price": 3
+          },
+          {
+            "id": "egg",
+            "name": "Ovo",
+            "price": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "pastel-carne",
+    "name": "Pastel de Carne",
+    "description": "Pastel grande crocante e recheado com carne temperada.",
+    "categoryId": "pasteis",
+    "price": 13.9,
+    "imageUrl": "",
+    "featured": false,
+    "active": true,
+    "badge": "",
+    "addonGroups": []
+  },
+  {
+    "id": "marmita-frango",
+    "name": "Marmita de Frango",
+    "description": "Arroz feijão salada farofa e frango grelhado.",
+    "categoryId": "marmitas",
+    "price": 24.9,
+    "imageUrl": "",
+    "featured": false,
+    "active": true,
+    "badge": "",
+    "addonGroups": []
+  },
+  {
+    "id": "batata",
+    "name": "Batata Frita",
+    "description": "Porção crocante com molho da casa.",
+    "categoryId": "porcoes",
+    "price": 18.9,
+    "imageUrl": "",
+    "featured": false,
+    "active": true,
+    "badge": "",
+    "addonGroups": [
+      {
+        "id": "portion",
+        "name": "Tamanho",
+        "required": true,
+        "min": 1,
+        "max": 1,
+        "priceMode": "final",
+        "options": [
+          {
+            "id": "medium",
+            "name": "Média",
+            "price": 18.9
+          },
+          {
+            "id": "large",
+            "name": "Grande",
+            "price": 26.9
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "refrigerante",
+    "name": "Refrigerante Lata",
+    "description": "Escolha o sabor no campo de observações.",
+    "categoryId": "bebidas",
+    "price": 6,
+    "imageUrl": "",
+    "featured": false,
+    "active": true,
+    "badge": "",
+    "addonGroups": []
+  }
+]

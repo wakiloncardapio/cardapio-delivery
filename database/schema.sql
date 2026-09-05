@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS orders (
+  id VARCHAR(40) PRIMARY KEY,
+  order_number VARCHAR(32) NOT NULL UNIQUE,
+  status VARCHAR(24) NOT NULL DEFAULT 'novo',
+  payment_status VARCHAR(24) NOT NULL DEFAULT 'pendente',
+  customer_name VARCHAR(160) NOT NULL,
+  customer_phone VARCHAR(40) NOT NULL,
+  customer_email VARCHAR(190) NULL,
+  fulfillment VARCHAR(20) NOT NULL,
+  address_json JSON NULL,
+  items_json JSON NOT NULL,
+  subtotal DECIMAL(10,2) NOT NULL,
+  delivery_fee DECIMAL(10,2) NOT NULL DEFAULT 0,
+  total DECIMAL(10,2) NOT NULL,
+  payment_method VARCHAR(40) NOT NULL,
+  notes TEXT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_orders_created (created_at),
+  INDEX idx_orders_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

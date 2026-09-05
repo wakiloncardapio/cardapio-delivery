@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Painel | Seu Delivery</title>
+  <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon/favicon.svg">
+  <link rel="stylesheet" href="admin.css?v=20260831-category-product-grid-v1">
+  <style>
+    .auth-screen{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(135deg,#26011a,#620853)}
+    .auth-card{width:min(440px,100%);background:#fff;border-radius:24px;padding:32px;box-shadow:0 24px 70px #19092366}
+    .auth-brand{display:flex;gap:14px;align-items:center;margin-bottom:26px}.auth-brand>span{display:grid;place-items:center;width:150px;height:72px}.auth-brand img{width:100%;height:100%;object-fit:contain}
+    .auth-brand b{display:block;font-size:20px}.auth-brand small{color:#7b7280}.auth-card h1{font-size:28px;margin:0 0 6px}.auth-card>p{color:#6f6672;margin:0 0 24px}
+    .auth-card label{display:grid;gap:7px;margin:14px 0;font-weight:700}.auth-card input{width:100%;padding:14px;border:1px solid #d9d2dc;border-radius:12px;font:inherit}
+    .auth-card button{width:100%;padding:14px;border:0;border-radius:12px;background:#620853;color:#fff;font:inherit;font-weight:800;cursor:pointer}.auth-error{color:#620853;background:#fff7b8;padding:10px;border-radius:10px}.setup-box{background:#fff7b8;color:#26011a;padding:14px;border-radius:12px;margin-top:16px}.setup-box a{color:#620853;font-weight:800}
+    .admin-layout>aside{background:#26011a}.admin-head>button,.primary{background:#620853}.admin-logo>span{width:88px!important;height:50px!important;border:0!important;border-radius:0!important;background:transparent!important}.admin-logo>span img{width:100%;height:100%;object-fit:contain}.admin-logo div{display:none!important}
+    .order-items{display:grid;gap:8px;margin:14px 0}.order-item{padding:12px;border-radius:9px;background:#fff;border:1px solid #62085322}.order-item>b{display:block;color:#620853}.order-item small{display:block;margin-top:5px;color:#620853;line-height:1.5}.order-address{margin:10px 0;padding:12px;border-left:4px solid #fcd307;border-radius:7px;background:#fff9cf;font-size:12px;line-height:1.55}.order-meta{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.order-meta span{padding:6px 9px;border-radius:999px;background:#620853;color:#fff;font-size:10px;font-weight:800}.order-notes{padding:10px;border-radius:8px;background:#fff9cf;color:#620853;font-size:11px}
+    [hidden]{display:none!important}
+  </style>
+</head>
+<body>
+  <section class="auth-screen" id="auth-screen">
+    <form class="auth-card" id="login-form">
+      <div class="auth-brand"><span><img src="../../assets/images/favicon/favicon.svg" alt="Seu Delivery"></span><div><b>Seu Delivery</b><small>PAINEL DE GESTÃO</small></div></div>
+      <h1>Entrar no painel</h1>
+      <p>Use o usuário administrador criado no Supabase.</p>
+      <label>E-mail<input id="login-email" type="email" autocomplete="username" required></label>
+      <label>Senha<input id="login-password" type="password" autocomplete="current-password" required></label>
+      <p class="auth-error" id="login-error" hidden></p>
+      <button type="submit">Entrar com segurança</button>
+      <div class="setup-box" id="setup-box" hidden>O Supabase ainda não está configurado. Preencha <b>assets/js/supabase-config.js</b> no GitHub.</div>
+    </form>
+  </section>
+
+  <div class="admin-layout" id="admin-app" hidden>
+    <aside>
+      <a class="admin-logo" href="../../"><span><img src="../../assets/images/favicon/favicon.svg" alt="Seu Delivery"></span><div><b>Seu Delivery</b><small>GESTÃO DO CARDÁPIO</small></div></a>
+      <nav aria-label="Seções do painel">
+        <button class="active" data-tab="dashboard">▦ Visão geral</button>
+        <button data-tab="orders">▣ Pedidos <b id="pending-badge">0</b></button>
+        <button data-tab="customers">♙ Clientes <b id="customers-badge">0</b></button>
+        <button data-tab="products">⬡ Produtos</button>
+        <button data-tab="appearance">◈ Aparência</button>
+        <button data-tab="settings">⚙ Configurações</button>
+      </nav>
+      <a class="logout" href="#" id="logout">↪ Sair do painel</a>
+    </aside>
+    <main>
+      <header class="admin-head"><div><a href="../../">← Ver cardápio</a><h1>Painel de controle</h1><p>Gerencie toda a operação do Seu Delivery.</p></div><button id="save-all">✓ Publicar alterações</button></header>
+      <div class="notice" id="notice" hidden></div>
+
+      <section class="tab active" data-panel="dashboard">
+        <div class="title row"><div><small>DESEMPENHO DA LOJA</small><h2>Visão geral</h2><p>Pedidos concluídos e cancelados não aparecem na lista de andamento.</p></div><div class="dashboard-filter"><label>Período<select id="dashboard-period"><option value="today">Hoje</option><option value="yesterday">Ontem</option><option value="7days">Últimos 7 dias</option><option value="30days">Últimos 30 dias</option><option value="custom">Escolher data</option><option value="all">Todo o histórico</option></select></label><label id="dashboard-date-field" hidden>Data<input type="date" id="dashboard-date"></label></div></div>
+        <div class="stats"><article class="metric-orders"><i>▣</i><span><small>Pedidos no período</small><b id="stat-orders">0</b></span></article><article class="metric-revenue"><i>↗</i><span><small>Faturamento no período</small><b id="stat-revenue">R$ 0,00</b></span></article><article class="metric-average"><i>R$</i><span><small>Ticket médio</small><b id="stat-average">R$ 0,00</b></span></article><article class="metric-pending"><i>◷</i><span><small>Em andamento agora</small><b id="stat-pending">0</b></span></article></div>
+        <div class="dashboard-grid dashboard-main"><article class="card revenue-card"><header><div><small>FATURAMENTO</small><h3 id="revenue-chart-title">Movimento no período</h3></div><b id="dashboard-revenue-total">R$ 0,00</b></header><div class="revenue-chart" id="revenue-chart"></div></article><article class="card operation"><h3>Operação</h3><div id="operation-summary"></div></article><article class="card current-orders"><h3>Pedidos em andamento</h3><div id="recent-orders"></div></article></div>
+      </section>
+
+      <section class="tab" data-panel="orders">
+        <div class="title row"><div><small>CONTROLE DA COZINHA</small><h2>Pedidos</h2><p id="order-filter-summary"></p></div><div class="order-toolbar"><button id="order-board-view" class="active">▦ CRM</button><button id="order-list-view">☷ Lista</button><button class="primary" id="refresh-orders">Atualizar</button></div></div>
+        <div class="order-filters" aria-label="Filtros dos pedidos">
+          <label>Período<select id="order-period"><option value="today">Hoje</option><option value="yesterday">Ontem</option><option value="7days">Últimos 7 dias</option><option value="30days">Últimos 30 dias</option><option value="custom">Escolher data</option><option value="all">Todos</option></select></label><button type="button" class="danger-action" id="delete-cancelled-orders">🗑 Apagar cancelados</button>
+          <label id="order-date-field" hidden>Data<input type="date" id="order-date"></label>
+        </div>
+        <div class="orders orders-board" id="orders-list"></div>
+      </section>
+
+      <section class="tab" data-panel="customers">
+        <div class="title row"><div><small>BASE DE RELACIONAMENTO</small><h2>Clientes</h2><p>Contatos reunidos automaticamente a partir dos pedidos salvos.</p></div><button class="primary" id="export-customers">↓ Baixar planilha CSV</button></div>
+        <div class="customer-stats"><article><small>CLIENTES ÚNICOS</small><b id="stat-customers">0</b></article><article><small>COM E-MAIL</small><b id="stat-customer-emails">0</b></article><article><small>ACEITARAM OFERTAS</small><b id="stat-marketing-consent">0</b></article><article><small>CLIENTES RECORRENTES</small><b id="stat-returning-customers">0</b></article></div>
+        <div class="customer-toolbar"><label>Buscar cliente<input id="customer-search" type="search" placeholder="Nome telefone ou e-mail"></label><label>Permissão de marketing<select id="customer-consent-filter"><option value="all">Todos os clientes</option><option value="yes">Aceitaram ofertas</option><option value="no">Sem autorização</option></select></label></div>
+        <div class="customer-table-card"><div class="customer-table" id="customers-list"></div><p class="customer-export-note">Para campanhas de marketing, utilize somente os contatos marcados como “Aceitou ofertas”.</p></div>
+      </section>
+      <section class="tab product-panel" data-panel="products">
+        <div class="title row"><div><small>CATÁLOGO ORGANIZADO</small><h2>Produtos por categoria</h2><p id="product-count"></p></div><button class="primary" id="new-product">+ Novo produto</button></div>
+        <div class="product-catalog-toolbar" aria-label="Filtros dos produtos">
+          <label class="product-search-field"><span>Buscar produto</span><input id="product-search" type="search" placeholder="Digite o nome do produto" autocomplete="off"></label>
+          <label><span>Categoria</span><select id="product-category-filter"><option value="all">Todas as categorias</option></select></label>
+          <label><span>Exibição</span><select id="product-status-filter"><option value="all">Todos os produtos</option><option value="active">Somente ativos</option><option value="inactive">Somente inativos</option><option value="featured">Somente destaques</option></select></label>
+        </div>
+        <p class="product-order-help">Use as setas em cada produto para definir a ordem em que ele aparece dentro da própria categoria.</p>
+        <div class="product-list product-catalog-sections" id="admin-products"></div>
+      </section>
+
+      <section class="tab" data-panel="appearance">
+        <div class="title"><small>IDENTIDADE DA MARCA</small><h2>Aparência</h2><p>Altere logo, banner e cores sem mexer no código.</p></div>
+        <div class="settings-grid">
+          <article class="card"><h3>Logo da loja</h3><div class="image-guide"><b>Ideal: 1000 × 500 px</b><span>PNG ou WebP transparente · até 2 MB · logo centralizada.</span></div><div class="upload-preview logo" id="logo-preview">A</div><label class="upload">Enviar nova logo<input type="file" data-upload="logo" accept="image/png,image/webp"></label><label>URL da logo<input id="logo-url"></label></article>
+          <article class="card seo-card"><h3>Google, SEO e favicon</h3><p>Edite como a empresa é apresentada na busca. O favicon deve ser quadrado e ter pelo menos 48 × 48 px.</p><div class="favicon-admin-preview" id="favicon-preview">A</div><label class="upload">Enviar favicon<input type="file" data-upload="favicon" accept="image/png,image/jpeg,image/webp,image/x-icon"></label><label>URL do favicon<input id="favicon-url" placeholder="https://.../favicon.png"></label><label>Título para o Google<input id="seo-title" maxlength="70"></label><label>Descrição para o Google<textarea id="seo-description" maxlength="180" rows="4"></textarea></label><small class="seo-help">As alterações ficam no site imediatamente. Depois, solicite uma nova indexação no Google Search Console.</small></article>
+          <article class="card"><h3>Banner principal</h3><div class="image-guide"><b>Ideal: 1920 × 900 px</b><span>JPG ou WebP · até 3 MB · produto principal mais para a direita.</span></div><div class="upload-preview banner" id="banner-preview"></div><label class="upload">Trocar banner<input type="file" data-upload="banner" accept="image/jpeg,image/png,image/webp"></label><label>URL do banner<input id="banner-url"></label></article>
+          <article class="card"><h3>Paleta oficial</h3><p>O cardápio usa somente as cores oficiais da marca.</p><div class="brand-swatches"><span><i style="background:#620853"></i>Roxo</span><span><i style="background:#fcd307"></i>Amarelo</span><span><i style="background:#fff"></i>Branco</span></div></article>
+          <article class="card"><h3>Texto principal</h3><label>Nome da loja<input id="store-name"></label><label>Descrição abaixo do título<input id="store-tagline"></label></article>
+          <article class="card info-icons-card"><h3>Ícones da faixa de informações</h3><p>Use os ícones atuais ou envie imagens quadradas com fundo transparente.</p><div id="info-icons-editor"></div></article>
+          <article class="card daily-offer-card"><h3>Oferta do dia</h3><label class="switch-line"><span><b>Exibir banner de oferta</b><small>Opcional e responsivo no celular e computador.</small></span><input type="checkbox" id="daily-offer-enabled"></label><label>Título da oferta<input id="daily-offer-title" placeholder="Produto em promoção"></label><label>Descrição<input id="daily-offer-description" placeholder="Somente hoje enquanto durar o estoque"></label><div class="two"><label>Texto do botão<input id="daily-offer-button" placeholder="APROVEITAR →"></label><label>Link do botão<input id="daily-offer-link" placeholder="#cardapio"></label></div><div class="offer-admin-preview" id="daily-offer-preview">OFERTA</div><label class="upload">Enviar imagem da oferta<input type="file" data-upload="offer" accept="image/jpeg,image/png,image/webp"></label><label>URL da imagem<input id="daily-offer-image"></label></article>
+          <article class="card menu-copy-card"><h3>Textos do cardápio</h3><p>Estes campos mudam os títulos visíveis no site sem precisar alterar código.</p><label>Selo do banner<input id="hero-eyebrow"></label><div class="two"><label>Título do banner<input id="hero-title"></label><label>Destaque amarelo<input id="hero-highlight"></label></div><div class="two"><label>Texto acima do cardápio<input id="menu-eyebrow"></label><label>Título do cardápio<input id="menu-title"></label></div><label>Texto da busca<input id="search-placeholder"></label><label>Chamada do WhatsApp<input id="whatsapp-eyebrow"></label><label>Título do WhatsApp<input id="whatsapp-title"></label><label>Texto do botão do WhatsApp<input id="whatsapp-button-text"></label></article>
+        </div>
+      </section>
+
+      <section class="tab" data-panel="settings">
+        <div class="title"><small>OPERAÇÃO E INTEGRAÇÕES</small><h2>Configurações</h2></div>
+        <div class="settings-grid">
+          <article class="card operation-settings"><h3>Loja e entrega</h3><label>Funcionamento<select id="store-status-mode"><option value="auto">Automático pelos horários</option><option value="open">Forçar loja aberta</option><option value="closed">Forçar loja fechada</option></select></label><div class="live-store-status" id="live-store-status"></div><label>Cidade atendida<input id="store-city"></label><label>Endereço<input id="store-address"></label><div class="two"><label>Taxa padrão de entrega<input type="number" step=".01" min="0" id="delivery-fee"></label><label>Pedido mínimo<input type="number" step=".01" min="0" id="min-order"></label></div><label>Tempo estimado<input id="estimated-time"></label></article>
+          <article class="card delivery-rules-card"><header class="card-row"><div><h3>Taxas e áreas de entrega</h3><p>Crie regras por bairro ou prefixo de CEP. A primeira regra compatível será aplicada.</p></div><button type="button" id="add-delivery-zone">+ Nova região</button></header><div id="delivery-zones-editor"></div><label>CEPs sem entrega<textarea id="blocked-postal-codes" rows="4" placeholder="Um CEP ou prefixo por linha. Ex.: 76900-000 ou 76905"></textarea></label><small class="delivery-help">Use CEP completo para bloquear apenas um endereço postal ou somente o início para bloquear uma faixa.</small></article>
+          <article class="card hours-card"><h3>Horários de funcionamento</h3><p>Ative os dias e informe abertura e fechamento. Horários que passam da meia-noite são reconhecidos automaticamente.</p><div id="hours-editor"></div></article>
+          <article class="card"><h3>Pedidos e pagamentos</h3><label>WhatsApp dos pedidos<input id="store-whatsapp"></label><label class="switch-line"><span><b>Abrir WhatsApp após finalizar</b><small>Desative para evitar o risco de enviar o mesmo pedido duas vezes.</small></span><input type="checkbox" id="auto-open-whatsapp"></label><label>E-mail dos pedidos<input id="order-email"></label><label>Formas de pagamento exibidas<input id="payment-summary" placeholder="PIX cartão ou dinheiro"></label><label>Chave PIX<input id="pix-key"></label><label>Link do gateway de pagamento<input id="payment-link"></label></article>
+          <article class="card"><h3>Rastreamento</h3><p>Use apenas os identificadores das plataformas.</p><label>Meta Pixel ID<input id="meta-pixel"></label><label>Google Tag Manager<input id="gtm-id" placeholder="GTM-XXXXXXX"></label><label>Google Analytics 4<input id="ga4-id" placeholder="G-XXXXXXXXXX"></label></article>
+          <article class="card"><h3>Dados empresariais</h3><label>Nome do estabelecimento<input id="establishment-name"></label><label>Nome da localização<input id="location-name" placeholder="Sua cidade - UF"></label><label>CNPJ<input id="store-cnpj" placeholder="00.000.000/0000-00"></label><label>Telefone público<input id="contact-phone"></label><label>E-mail público<input id="public-email" type="email"></label></article>
+          <article class="card"><h3>Redes sociais</h3><p>Os ícones aparecem no rodapé quando o link estiver preenchido.</p><label>Instagram<input id="instagram-url" type="url" placeholder="https://instagram.com/..."></label><label>Página do Facebook<input id="facebook-url" type="url" placeholder="https://facebook.com/..."></label><label>TikTok<input id="tiktok-url" type="url" placeholder="https://tiktok.com/@..."></label></article>
+          <article class="card driver-delivery-card"><h3>Envio ao motoboy pelo WhatsApp</h3><p>Abre o WhatsApp do motoboy com os dados da entrega e a rota já preenchidos. Não utiliza API.</p><label class="switch-line"><span><b>Ativar envio ao motoboy</b><small>Quando desligado, os botões desaparecem dos pedidos.</small></span><input type="checkbox" id="driver-delivery-enabled"></label><div id="driver-delivery-fields"><label>Nome do motoboy<input id="driver-name" placeholder="Ex.: Carlos"></label><label>WhatsApp do motoboy<input id="driver-whatsapp" inputmode="tel" placeholder="(00) 99999-9999"></label><small>Ao clicar em “Enviar ao motoboy”, o WhatsApp abrirá com a mensagem pronta. Basta confirmar o envio.</small></div></article>
+          <article class="card integration-card"><h3>WhatsApp Cloud API</h3><label class="switch-line"><span><b>Ativar envio pela API da Meta</b><small>O token fica protegido nos Secrets do Supabase.</small></span><input type="checkbox" id="whatsapp-cloud-enabled"></label><p>Função preparada: <code>whatsapp-order</code>. Nunca coloque o token dentro do painel.</p><a href="../../INTEGRACOES.md" target="_blank">Ver instruções de integração</a></article>
+          <article class="card integration-card make-card"><h3>E-mails automáticos · Make + Mailgun</h3><label class="switch-line"><span><b>Ativar automação de e-mail</b><small>O pedido vai ao e-mail da loja e o cliente recebe atualizações.</small></span><input type="checkbox" id="make-webhook-enabled"></label><label>Webhook personalizado do Make<input id="make-webhook-url" type="password" autocomplete="off" placeholder="https://hook...make.com/..."></label><div class="integration-actions"><button type="button" id="toggle-make-webhook">Mostrar URL</button><button type="button" id="test-make-webhook">Testar webhook</button></div><p id="make-webhook-status">O endereço é salvo em uma tabela privada do Supabase e não aparece no cardápio.</p><a href="../../INTEGRACOES.md#make-mailgun" target="_blank">Como montar o cenário no Make</a></article>
+          <article class="card redirect-card"><h3>Redirecionamento após o pedido</h3><label class="switch-line"><span><b>Ativar redirecionamento</b><small>Depois da confirmação, o cliente será levado para o link informado.</small></span><input type="checkbox" id="order-redirect-enabled"></label><label>Link de destino<input id="order-redirect-url" type="url" placeholder="https://seusite.com/obrigado"></label><p>É opcional. Se estiver desligado ou vazio, o cliente permanece na confirmação do pedido.</p></article>
+          <article class="card crm-notifications-card"><header><div><h3>Mensagens das etapas do CRM</h3><p>Ative somente os avisos desejados. Você pode mudar título, mensagem e imagem de cada etapa.</p></div></header><div class="notification-variables"><b>Variáveis disponíveis:</b> <code>{primeiro_nome}</code> <code>{pedido}</code> <code>{total}</code></div><div id="crm-notifications-editor"></div></article>
+          <article class="card integration-card"><h3>Gateway e checkout</h3><label>Provedor<select id="gateway-provider"><option value="none">Nenhum</option><option value="custom">API personalizada</option><option value="mercadopago">Mercado Pago</option><option value="pagarme">Pagar.me</option><option value="stripe">Stripe</option></select></label><label class="switch-line"><span><b>Ativar checkout pela API</b><small>As credenciais ficam no Supabase.</small></span><input type="checkbox" id="gateway-enabled"></label><p>Função preparada: <code>create-checkout</code>.</p></article>
+          <article class="card categories-card"><header class="card-row"><div><h3>Categorias</h3><p>Ideal: 1200 × 650 px, JPG ou WebP, até 2 MB. Mantenha o alimento centralizado.</p></div><button id="add-category">+ Adicionar</button></header><div id="category-editor"></div></article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="dialog" id="product-dialog" role="dialog" aria-modal="true" aria-labelledby="editor-title" hidden>
+    <form id="product-form">
+      <header class="editor-head"><div><small>EDIÇÃO DO PRODUTO</small><h2 id="editor-title">Novo produto</h2><p>Configure o produto, tamanhos e acompanhamentos.</p></div><button type="button" class="close" data-close-product aria-label="Fechar edição">×</button></header>
+      <div class="editor-scroll">
+        <div class="editor-progress" aria-label="Etapas da edição"><span><b>1</b> Dados</span><span><b>2</b> Adicionais</span><span><b>3</b> Publicar</span></div>
+        <section class="editor-block"><header class="editor-block-title"><span>1</span><div><h3>Dados do produto</h3><p>Imagem, nome, preço e exibição no cardápio.</p></div></header>
+          <div class="product-basic"><div class="product-media"><div class="image-guide compact"><b>Ideal: 1000 × 1000 px</b><span>JPG ou WebP quadrado · até 2 MB.</span></div><div class="product-photo" id="product-photo">⬡</div><label class="upload">Enviar ou trocar imagem<input type="file" data-upload="product" accept="image/jpeg,image/png,image/webp"></label><button type="button" class="remove-image" id="remove-product-image">Remover imagem</button><small class="upload-help">A imagem é otimizada automaticamente e não altera o tamanho do card.</small></div><div class="product-fields"><label>Nome do produto<input id="edit-name" required autocomplete="off"></label><label>Categoria<select id="edit-category"></select></label><div class="two"><label>Preço base ou menor tamanho<input id="edit-price" type="number" inputmode="decimal" step=".01" min="0" required></label><label>Selo<input id="edit-badge" placeholder="Mais pedido"></label></div><label class="switch-line free-shipping-control"><span><b>Entrega grátis neste produto</b><small>Zera e bloqueia a taxa de entrega quando este produto estiver no carrinho.</small></span><input type="checkbox" id="edit-free-shipping-enabled"></label><label id="free-shipping-label-field" class="free-shipping-label-field" hidden>Texto do selo de entrega grátis<input id="edit-free-shipping" placeholder="Entrega grátis"></label></div></div>
+          <label>Descrição<textarea id="edit-description" rows="4"></textarea></label><label>URL da imagem<input id="edit-image" inputmode="url"></label><div class="two switches"><label><input id="edit-active" type="checkbox"> Produto ativo</label><label><input id="edit-featured" type="checkbox"> Destaque</label></div>
+        </section>
+        <section class="addons-editor editor-block"><header><div class="editor-block-title"><span>2</span><div><h3>Adicionais e etapas</h3><p>Crie tamanhos e acompanhamentos na ordem em que o cliente deve escolher.</p></div></div><button type="button" id="add-group">+ Novo grupo</button></header><div id="addon-groups"></div></section>
+      </div>
+      <footer><span class="editor-save-hint" id="editor-save-hint">Revise os dados antes de publicar.</span><button type="button" data-close-product>Cancelar</button><button class="primary" id="save-product">✓ Confirmar e publicar</button></footer>
+    </form>
+  </div>
+  <div class="confirm" id="confirm-delete" hidden><div><h3>Excluir produto?</h3><p>Ele será removido após publicar as alterações.</p><footer><button id="cancel-delete">Cancelar</button><button id="do-delete">Excluir</button></footer></div></div>
+  <div class="confirm" id="confirm-order-delete" hidden><div><h3>Excluir pedido?</h3><p id="order-delete-message">O pedido e o histórico de automações serão removidos definitivamente.</p><footer><button id="cancel-order-delete">Voltar</button><button id="do-order-delete">Excluir pedido</button></footer></div></div>
+  <div class="confirm" id="confirm-order-cancel" hidden><div><h3>Cancelar este pedido?</h3><p id="order-cancel-message">Confirme somente se a loja realmente não aceitará o pedido. Pedidos cancelados não registram conversão.</p><footer><button id="keep-order">Não, manter pedido</button><button id="do-order-cancel">Sim, cancelar</button></footer></div></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="../../assets/js/supabase-config.js"></script>
+  <script src="../../assets/js/supabase-store.js?v=20260904-manual-conversion"></script>
+  <script src="github-admin.js?v=20260904-manual-conversion"></script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+name: Deploy Meta Conversions API
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/meta-conversions/**'
+      - 'supabase/functions/confirmed-conversions/**'
+      - '.github/workflows/deploy-meta-conversions.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-meta-conversions-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      META_CAPI_ACCESS_TOKEN: ${{ secrets.META_CAPI_ACCESS_TOKEN }}
+      META_CAPI_TEST_EVENT_CODE: ${{ secrets.META_CAPI_TEST_EVENT_CODE }}
+      META_CAPI_PIXEL_ID: ${{ secrets.META_CAPI_PIXEL_ID }}
+      SITE_URL: ${{ secrets.SITE_URL }}
+      PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Validate deployment credentials
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ] || [ -z "$PROJECT_ID" ]; then
+            echo "::error::Configure SUPABASE_ACCESS_TOKEN e SUPABASE_PROJECT_ID antes de executar este workflow."
+            exit 1
+          fi
+
+      - name: Configure Meta secrets when available
+        run: |
+          if [ -n "$META_CAPI_ACCESS_TOKEN" ] && [ -n "$META_CAPI_PIXEL_ID" ] && [ -n "$SITE_URL" ]; then
+            supabase secrets set \
+              META_CAPI_ACCESS_TOKEN="$META_CAPI_ACCESS_TOKEN" \
+              META_CAPI_PIXEL_ID="$META_CAPI_PIXEL_ID" \
+              SITE_URL="$SITE_URL" \
+              --project-ref "$PROJECT_ID"
+          else
+            echo "::warning::A função será publicada, mas só enviará eventos depois que token, Pixel e SITE_URL forem configurados."
+          fi
+
+          if [ -n "$META_CAPI_TEST_EVENT_CODE" ]; then
+            supabase secrets set META_CAPI_TEST_EVENT_CODE="$META_CAPI_TEST_EVENT_CODE" --project-ref "$PROJECT_ID"
+          else
+            supabase secrets unset META_CAPI_TEST_EVENT_CODE --project-ref "$PROJECT_ID" || true
+          fi
+
+      - name: Deploy meta-conversions function
+        run: supabase functions deploy meta-conversions --project-ref "$PROJECT_ID" --no-verify-jwt
+      - name: Deploy confirmed-conversions function
+        run: supabase functions deploy confirmed-conversions --project-ref "$PROJECT_ID" --no-verify-jwt

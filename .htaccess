@@ -1,0 +1,21 @@
+Options -Indexes
+RewriteEngine On
+RewriteCond %{HTTPS} !=on
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Protege credenciais, pedidos e arquivos internos.
+<FilesMatch "^\.">
+  Require all denied
+</FilesMatch>
+RewriteRule ^data/orders/ - [F,L]
+RewriteRule ^sistema/database/ - [F,L]
+RewriteRule ^database/ - [F,L]
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+<FilesMatch "\.(json|css|js|png|jpg|jpeg|webp|svg|woff2)$">
+  Header set Cache-Control "public, max-age=3600"
+</FilesMatch>
