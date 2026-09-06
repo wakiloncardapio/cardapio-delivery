@@ -207,7 +207,7 @@
   }
 
   function storeMarkup(store) {
-    const disabled = store.is_demo ? 'disabled' : '';
+    const disabled = '';
     const isOpen = openStoreId === String(store.id);
     return `<article class="store-card${isOpen ? ' is-open' : ''}" data-store-card="${store.id}">
       <header class="store-summary" data-toggle-store="${store.id}" role="button" tabindex="0" aria-expanded="${isOpen}"><div class="store-identity">${storeLogo(store)}<div><h2>${esc(store.name)}</h2><p>seufood.com/${esc(store.slug)}</p></div></div>
@@ -266,9 +266,13 @@
     const session = await SupabaseStore.getSession();
     if (!session) return;
     if (!(await SupabaseStore.isPlatformAdmin())) return showLoginError('Este usuário não é o administrador central do Seu Food.');
-    $('#auth-screen').hidden = true;
-    $('#central-app').hidden = false;
-    try { await load(); } catch (error) { notice(`${error.message} Execute primeiro a migração 004_multi_tenant.sql e publique a função platform-admin.`, true); }
+    try {
+      await load();
+      $('#auth-screen').hidden = true;
+      $('#central-app').hidden = false;
+    } catch (error) {
+      showLoginError(`${error.message} Execute primeiro a migração 004_multi_tenant.sql e publique a função platform-admin.`);
+    }
   }
 
   $('#login-form').onsubmit = async event => {

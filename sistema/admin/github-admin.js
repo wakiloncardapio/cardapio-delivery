@@ -73,8 +73,13 @@
   }
 
   async function openAdmin() {
-    $('#auth-screen').hidden = true;
-    $('#admin-app').hidden = false;
+    const loginForm = $('#login-form');
+    loginForm?.classList.add('is-loading');
+    const loginButton = loginForm?.querySelector('button[type="submit"]');
+    if (loginButton) {
+      loginButton.disabled = true;
+      loginButton.textContent = 'Carregando a empresa...';
+    }
     try {
       accessibleStores = await SupabaseStore.getAccessibleStores();
       if (!accessibleStores.length) throw new Error('Seu acesso não está vinculado a nenhuma empresa ativa. Fale com o administrador do Seu Food.');
@@ -98,8 +103,15 @@
       renderAll();
       startOrderPolling();
       if (new URLSearchParams(location.search).get("tab") === "orders") document.querySelector('[data-tab="orders"]')?.click();
+      $('#auth-screen').hidden = true;
+      $('#admin-app').hidden = false;
     } catch (error) {
-      notice(error.message, true);
+      showLoginError(error.message);
+      loginForm?.classList.remove('is-loading');
+      if (loginButton) {
+        loginButton.disabled = false;
+        loginButton.textContent = 'Entrar com segurança';
+      }
     }
   }
 
@@ -108,7 +120,8 @@
     switcher.innerHTML = accessibleStores.map(item =>
       `<option value="${esc(item.slug)}" ${item.id === store.id ? 'selected' : ''}>${esc(item.name)}</option>`
     ).join('');
-    $('#store-switcher-field').hidden = accessibleStores.length < 2;
+    const openedFromCentral = new URLSearchParams(location.search).has('loja');
+    $('#store-switcher-field').hidden = openedFromCentral || accessibleStores.length < 2;
     $('#admin-store-caption').textContent = `Gerencie produtos, pedidos e configurações de ${store.name}.`;
     const publicUrl = new URL('../../', window.location.href);
     publicUrl.searchParams.set('loja', store.slug);
@@ -2107,4 +2120,3 @@
   bind();
   boot();
 })();
-

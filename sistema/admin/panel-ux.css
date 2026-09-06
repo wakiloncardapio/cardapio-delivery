@@ -1,0 +1,112 @@
+/* Navegação profissional das configurações: menu e conteúdo são campos separados. */
+[data-panel="settings"] .settings-grid.settings-workspace{
+  display:grid;
+  grid-template-columns:minmax(230px,300px) minmax(0,1fr);
+  align-items:start;
+  gap:16px;
+}
+.settings-menu{
+  padding:8px;
+  border:1px solid #d7ddda;
+  border-radius:14px;
+  background:#f8f9fa;
+  display:grid;
+  gap:6px;
+}
+.settings-menu-button{
+  width:100%;
+  min-height:50px;
+  padding:12px 13px;
+  border:1px solid transparent;
+  border-radius:10px;
+  background:transparent;
+  color:#202124;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  text-align:left;
+  font-size:13px;
+  font-weight:800;
+}
+.settings-menu-button::after{
+  content:'›';
+  color:#5f6368;
+  font-size:21px;
+  font-weight:500;
+}
+.settings-menu-button:hover{background:#eef1f0}
+.settings-menu-button.active{
+  border-color:#b9d2c8;
+  background:#eaf4f0;
+  color:#0d6b4f;
+}
+.settings-detail{
+  min-width:0;
+  min-height:300px;
+  border:1px solid #d7ddda;
+  border-radius:14px;
+  background:#fff;
+  overflow:hidden;
+}
+.settings-placeholder{
+  min-height:300px;
+  padding:40px 24px;
+  color:#5f6368;
+  display:grid;
+  place-items:center;
+  text-align:center;
+  line-height:1.55;
+}
+.settings-detail>.card{
+  width:100%;
+  margin:0;
+  padding:22px;
+  border:0;
+  border-radius:0;
+  box-shadow:none;
+}
+.settings-detail>.card>.config-original-title{
+  display:block!important;
+  margin-bottom:18px;
+  padding-bottom:13px;
+  border-bottom:1px solid #e0e4e2;
+}
+
+/* Todas as áreas principais de imagem ocupam a mesma medida. */
+[data-panel="appearance"] .upload-preview,
+[data-panel="appearance"] .favicon-admin-preview,
+[data-panel="appearance"] .offer-admin-preview{
+  width:100%;
+  height:170px;
+  min-height:170px;
+  margin:12px 0 0;
+  border:1px solid #d7ddda;
+  border-radius:12px;
+  background:#f8f9fa;
+}
+[data-panel="appearance"] .upload-preview img,
+[data-panel="appearance"] .favicon-admin-preview img,
+[data-panel="appearance"] .offer-admin-preview img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+[data-panel="appearance"] .settings-grid>.card{min-width:0}
+
+@media(max-width:780px){
+  [data-panel="settings"] .settings-grid.settings-workspace{grid-template-columns:1fr}
+  .settings-menu{
+    grid-auto-flow:column;
+    grid-auto-columns:minmax(190px,72vw);
+    overflow-x:auto;
+    overscroll-behavior-inline:contain;
+    scroll-snap-type:x proximity;
+  }
+  .settings-menu-button{scroll-snap-align:start}
+  .settings-detail,.settings-placeholder{min-height:220px}
+  .settings-detail>.card{padding:17px}
+  [data-panel="appearance"] .upload-preview,
+  [data-panel="appearance"] .favicon-admin-preview,
+  [data-panel="appearance"] .offer-admin-preview{height:150px;min-height:150px}
+}

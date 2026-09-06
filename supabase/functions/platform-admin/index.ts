@@ -265,10 +265,6 @@ Deno.serve(async req => {
         const value = body[key];
         patch[column] = value === '' || value === null ? null : (key.startsWith('max') ? Math.max(0, Number(value) || 0) : value);
       });
-      if (storeId === DEMO_STORE_ID) {
-        delete patch.status;
-        delete patch.storefront_enabled;
-      }
       let store: any = null;
       if (Object.keys(patch).length) {
         const result = await db.from('stores').update(patch).eq('id', storeId).select('*').single();

@@ -1,0 +1,29 @@
+name: Publicar Central de empresas
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/platform-admin/**'
+      - '.github/workflows/deploy-platform-admin.yml'
+permissions:
+  contents: read
+concurrency:
+  group: deploy-platform-admin-production
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_ID: tamwadldvmspvmstqggc
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Validar credencial
+        run: test -n "$SUPABASE_ACCESS_TOKEN"
+      - name: Publicar somente a Central protegida
+        run: supabase functions deploy platform-admin --project-ref "$PROJECT_ID"
