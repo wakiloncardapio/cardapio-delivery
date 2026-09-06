@@ -6,22 +6,6 @@
     return document.querySelector('#store-loading-screen');
   }
 
-  function preload(url) {
-    if (!String(url || '').trim()) return Promise.resolve();
-    return new Promise(resolve => {
-      const image = new Image();
-      let timer = window.setTimeout(resolve, 3000);
-      const done = () => {
-        window.clearTimeout(timer);
-        resolve();
-      };
-      image.onload = done;
-      image.onerror = done;
-      image.src = String(url);
-      if (image.complete) done();
-    });
-  }
-
   function reveal() {
     if (finished) return;
     finished = true;
@@ -50,11 +34,8 @@
   window.MenuAPI.loadCatalog = async function () {
     try {
       const catalog = await loadCatalog();
-      const settings = catalog?.settings || {};
-      await Promise.all([
-        preload(settings.logoUrl),
-        preload(settings.bannerUrl)
-      ]);
+      // O app aplica nome, cores e URLs antes deste timer executar.
+      // Logo e banner continuam carregando progressivamente e não bloqueiam a abertura.
       window.setTimeout(reveal, 0);
       return catalog;
     } catch (error) {
