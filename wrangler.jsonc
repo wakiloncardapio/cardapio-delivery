@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "seu-food-cardapios",
+  "compatibility_date": "2026-09-06",
+  "preview_urls": true,
+  "assets": {
+    "directory": "./_site",
+    "not_found_handling": "single-page-application",
+    "html_handling": "auto-trailing-slash"
+  }
+}
