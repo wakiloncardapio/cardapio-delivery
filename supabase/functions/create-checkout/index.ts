@@ -141,7 +141,6 @@ Deno.serve(async req => {
           type: 'online',
           external_reference: order.id,
           total_amount: money(order.total),
-          notification_url: notificationUrl,
           payer: {
             email: 'test_user_br@testuser.com',
             first_name: 'APRO'
