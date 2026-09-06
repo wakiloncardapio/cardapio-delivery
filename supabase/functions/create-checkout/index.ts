@@ -137,8 +137,7 @@ Deno.serve(async req => {
     const pixEndpoint = pixTestMode
       ? 'https://api.mercadopago.com/v1/orders'
       : 'https://api.mercadopago.com/v1/payments';
-    const pixPayload = pixTestMode
-      ? {
+    const pixTestPayload = {
           type: 'online',
           external_reference: order.id,
           total_amount: money(order.total),
@@ -153,8 +152,8 @@ Deno.serve(async req => {
               payment_method: { id: 'pix', type: 'bank_transfer' }
             }]
           }
-        }
-      : {
+        };
+    const pixLivePayload = {
           transaction_amount: Number(order.total),
           description: `Pedido ${order.order_number}`,
           payment_method_id: 'pix',
@@ -165,12 +164,25 @@ Deno.serve(async req => {
             first_name: String(customer.name || '').trim().split(/\s+/)[0] || 'Cliente'
           }
         };
-    const response = await fetch(pixEndpoint, {
+    const pixPayload = pixTestMode ? pixTestPayload : pixLivePayload;
+    let response = await fetch(pixEndpoint, {
       method: 'POST',
       headers: commonHeaders,
       body: JSON.stringify(pixPayload)
     });
-    const result = await response.json().catch(() => ({}));
+    let result = await response.json().catch(() => ({}));
+    // Algumas credenciais de sandbox são reportadas como contas reais pelo
+    // endpoint /users/me. Se a API antiga recusar exatamente por esse conflito,
+    // repita uma única vez pelo fluxo oficial de teste da Orders API.
+    if (!response.ok && !pixTestMode &&
+      /unauthorized use of live credentials/i.test(JSON.stringify(result))) {
+      response = await fetch('https://api.mercadopago.com/v1/orders', {
+        method: 'POST',
+        headers: commonHeaders,
+        body: JSON.stringify(pixTestPayload)
+      });
+      result = await response.json().catch(() => ({}));
+    }
     if (!response.ok) {
       const failure = paymentFailure(result, 'O Mercado Pago não conseguiu gerar o PIX.');
       await recordPaymentAttempt(db, {
