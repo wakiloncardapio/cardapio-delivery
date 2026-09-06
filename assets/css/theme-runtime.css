@@ -1,5 +1,6 @@
+@font-face{font-family:"Fredoka";src:url("../fonts/Fredoka-latin.woff2") format("woff2");font-style:normal;font-weight:300 700;font-display:swap}
 body{font-family:var(--body-font,Arial,sans-serif)}
-.brand b,.hero-copy h1,.section-title h2,.product-copy h3,.whatsapp-callout b,.product-modal-head h2,.checkout-head h2,.checkout-step h3,.success h2,.cart h2,.daily-offer-copy h2,.hours-modal h2{font-family:var(--heading-font,Georgia,serif)!important}
+.brand b,.hero-copy h1,.section-title h2,.product-copy h3,.whatsapp-callout b,.product-modal-head h2,.checkout-head h2,.checkout-step h3,.success h2,.cart h2,.daily-offer-copy h2,.hours-modal h2,.product-price,.summary .total,.review-total.grand,.order-number b{font-family:var(--heading-font,"Fredoka",Arial,sans-serif)!important}
 .card-effect-shine .product-card,.card-effect-shine .info-strip,.card-effect-shine .daily-offer{position:relative;isolation:isolate;overflow:hidden}
 .card-effect-shine .product-card::after,.card-effect-shine .info-strip::after,.card-effect-shine .daily-offer::after{content:"";position:absolute;z-index:-1;inset:-80% auto -80% -45%;width:28%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.7),transparent);transform:rotate(18deg);animation:store-shine 5.5s ease-in-out infinite}
 .card-effect-glass .product-card,.card-effect-glass .info-strip,.card-effect-glass .daily-offer{border-color:rgba(255,255,255,.66);background:rgba(255,255,255,.78);backdrop-filter:blur(13px);box-shadow:0 16px 45px color-mix(in srgb,var(--brand) 18%,transparent)}

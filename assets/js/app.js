@@ -39,7 +39,7 @@
     settings.accentColor = /^#[0-9a-f]{6}$/i.test(settings.accentColor || '') ? settings.accentColor : '#fcd307';
     settings.brandBrightColor = /^#[0-9a-f]{6}$/i.test(settings.brandBrightColor || '') ? settings.brandBrightColor : settings.primaryColor;
     settings.bodyFont = ['arial','inter','trebuchet','poppins'].includes(settings.bodyFont) ? settings.bodyFont : 'arial';
-    settings.headingFont = ['georgia','arial','inter','poppins'].includes(settings.headingFont) ? settings.headingFont : 'georgia';
+    settings.headingFont = ['fredoka','georgia','arial','inter','poppins'].includes(settings.headingFont) ? settings.headingFont : 'fredoka';
     settings.cardEffect = ['clean','shine','glass','neon'].includes(settings.cardEffect) ? settings.cardEffect : 'clean';
     settings.customCss = typeof settings.customCss === 'string' ? settings.customCss.slice(0, 8000) : '';
     settings.timezone = settings.timezone || 'America/Sao_Paulo';
@@ -101,13 +101,14 @@
       inter: 'Inter, Arial, sans-serif',
       trebuchet: '"Trebuchet MS", Arial, sans-serif',
       poppins: 'Poppins, Arial, sans-serif',
-      georgia: 'Georgia, serif'
+      georgia: 'Georgia, serif',
+      fredoka: 'Fredoka, Arial, sans-serif'
     };
     document.documentElement.style.setProperty('--brand', settings.primaryColor);
     document.documentElement.style.setProperty('--accent', settings.accentColor);
     document.documentElement.style.setProperty('--brand-bright', settings.brandBrightColor);
     document.documentElement.style.setProperty('--body-font', fonts[settings.bodyFont] || fonts.arial);
-    document.documentElement.style.setProperty('--heading-font', fonts[settings.headingFont] || fonts.georgia);
+    document.documentElement.style.setProperty('--heading-font', fonts[settings.headingFont] || fonts.fredoka);
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', settings.primaryColor);
     document.body.classList.remove('card-effect-clean','card-effect-shine','card-effect-glass','card-effect-neon');
     document.body.classList.add(`card-effect-${settings.cardEffect}`);

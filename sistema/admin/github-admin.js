@@ -260,7 +260,7 @@
     if (!/^#[0-9a-f]{6}$/i.test(settings.accentColor || '')) set('accentColor', '#fcd307');
     if (!/^#[0-9a-f]{6}$/i.test(settings.brandBrightColor || '')) set('brandBrightColor', '#620853');
     if (!['arial','inter','trebuchet','poppins'].includes(settings.bodyFont)) set('bodyFont', 'arial');
-    if (!['georgia','arial','inter','poppins'].includes(settings.headingFont)) set('headingFont', 'georgia');
+    if (!['fredoka','georgia','arial','inter','poppins'].includes(settings.headingFont)) set('headingFont', 'fredoka');
     if (!['clean','shine','glass','neon'].includes(settings.cardEffect)) set('cardEffect', 'clean');
     if (typeof settings.customCss !== 'string') set('customCss', '');
     if (typeof settings.autoOpenWhatsApp !== 'boolean') set('autoOpenWhatsApp', false);
@@ -347,7 +347,7 @@
     $('#brand-bright-color').value = validThemeColor(settings.brandBrightColor, '#620853');
     $('#brand-bright-text').value = validThemeColor(settings.brandBrightColor, '#620853');
     $('#body-font').value = settings.bodyFont || 'arial';
-    $('#heading-font').value = settings.headingFont || 'georgia';
+    $('#heading-font').value = settings.headingFont || 'fredoka';
     $('#card-effect').value = settings.cardEffect || 'clean';
     $('#custom-css').value = settings.customCss || '';
     $('#order-redirect-enabled').checked = Boolean(settings.orderRedirectEnabled);
