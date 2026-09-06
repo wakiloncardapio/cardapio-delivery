@@ -16,7 +16,7 @@ jobs:
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       PROJECT_ID: tamwadldvmspvmstqggc
-      SITE_URL: https://wakiloncardapio.github.io/cardapio-delivery
+      SITE_URL: https://seu-food-cardapios.wakilonferreira.workers.dev
     steps:
       - uses: actions/checkout@v4
 
