@@ -1,0 +1,25 @@
+/* Marca da plataforma separada da identidade de cada restaurante. */
+.auth-screen,.auth{min-height:100dvh!important;height:auto!important;overflow:auto!important;background:#f3f5f4!important;padding:24px 16px!important}
+.auth-card{position:relative!important;display:flex!important;flex-direction:column!important;gap:0!important;width:min(440px,100%)!important;max-width:100%!important;height:auto!important;padding:28px!important;border:1px solid #dce3df!important;border-radius:18px!important;background:#fff!important;box-shadow:0 12px 40px #143c2410!important;color:#202724!important;box-sizing:border-box}
+.auth-card>*,.auth-card label,.auth-card input,.auth-card button{position:static!important;transform:none!important;float:none!important;min-width:0;max-width:100%;box-sizing:border-box}
+.auth-card .auth-brand,.auth-card .brand{display:flex!important;flex-direction:column!important;gap:8px!important;margin:0 0 24px!important;padding:0!important;align-items:center!important}
+.auth-card .auth-brand>span,.auth-card .brand>span{display:block!important;width:230px!important;max-width:100%!important;height:115px!important;border:0!important;border-radius:0!important;padding:0!important;background:transparent!important;overflow:hidden!important}
+.auth-card .auth-brand img,.auth-card .brand img{display:block!important;width:100%!important;height:100%!important;padding:0!important;object-fit:contain!important}
+.auth-card .auth-brand>div,.auth-card .brand>div{text-align:center}
+.auth-card .auth-brand b,.auth-card .brand b{display:none!important}
+.auth-card small{color:#65736b!important}
+.auth-card h1{margin:0 0 8px!important;font:700 25px/1.25 Arial,sans-serif!important}
+.auth-card>p{margin:0 0 16px!important;font:400 14px/1.5 Arial,sans-serif!important;overflow-wrap:anywhere}
+.auth-card label{display:grid!important;gap:7px!important;margin:12px 0!important;font:700 14px/1.4 Arial,sans-serif!important;color:#273a30!important}
+.auth-card input{display:block;width:100%!important;min-height:48px!important;padding:12px!important;border:1px solid #cbd5cf!important;border-radius:9px!important;background:#fff!important;color:#17251c!important;font-size:16px!important}
+.auth-card input:focus{outline:2px solid #16885d!important;outline-offset:2px}
+.auth-card>button{min-height:48px!important;margin-top:14px!important;background:#0d6b4f!important;color:#fff!important;border:0!important;border-radius:9px!important}
+.auth-card .error,.auth-card .auth-error,.auth-card .setup-box{padding:12px!important;margin:12px 0!important;background:#fff3f3!important;color:#a32332!important;font:400 13px/1.45 Arial,sans-serif!important;overflow-wrap:anywhere}
+.admin-layout .admin-logo{width:100%;padding:8px!important;background:#fff;border-radius:10px!important;justify-content:center}
+.admin-layout .admin-logo>span{width:180px!important;max-width:100%!important;height:90px!important}
+.admin-layout .admin-logo img{width:100%!important;height:100%!important;object-fit:contain!important}
+.topbar .brand>[data-platform-logo]{width:150px!important;height:75px!important;border:0!important;border-radius:0!important;background:#fff!important}
+.topbar .brand>[data-platform-logo] img{width:100%;height:100%;padding:0!important;object-fit:contain}
+.topbar .brand>div>b{display:none}
+.platform-logo-actions{display:none!important}
+@media(max-width:700px){.admin-layout .admin-logo{width:auto;max-width:170px}.admin-layout .admin-logo>span{width:140px!important;height:62px!important}.auth-card{padding:24px!important}}

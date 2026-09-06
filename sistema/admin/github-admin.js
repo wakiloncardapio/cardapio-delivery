@@ -1486,8 +1486,8 @@
     $('#remove-banner-image').hidden = !settings.bannerUrl;
     $('#remove-favicon-image').hidden = !settings.faviconUrl;
     $('#remove-offer-image').hidden = !offerImage;
-    $$('.admin-logo img').forEach(image => { image.src = preview(settings.logoUrl || 'assets/images/favicon/favicon.svg'); });
-    $$('.admin-logo b, .auth-brand b').forEach(element => { element.textContent = storeName; });
+    $$('.admin-logo img, .auth-brand img').forEach(image => { image.src = '../../assets/images/seu-food-panel.png'; image.alt = 'Seu Food — plataforma de cardápios'; });
+    $$('.admin-logo b, .auth-brand b').forEach(element => { element.textContent = 'Seu Food'; });
   }
 
   function updateEditorState() {

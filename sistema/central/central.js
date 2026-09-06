@@ -100,22 +100,10 @@
   }
 
   function applyPlatformBranding() {
-    const logoUrl = String(platform.branding?.logo_url || '');
     document.querySelectorAll('[data-platform-logo]').forEach(mark => {
-      if (!logoUrl) {
-        mark.classList.remove('has-image');
-        mark.textContent = 'SF';
-        return;
-      }
-      mark.innerHTML = `<img src="${esc(logoUrl)}" alt="Logo do painel Seu Food">`;
+      mark.innerHTML = '<img src="../../assets/images/seu-food-panel.png" alt="Seu Food — plataforma de cardápios">';
       mark.classList.add('has-image');
-      mark.querySelector('img').addEventListener('error', () => {
-        mark.classList.remove('has-image');
-        mark.textContent = 'SF';
-      }, { once: true });
     });
-    const removeButton = $('#platform-logo-remove');
-    if (removeButton) removeButton.hidden = !logoUrl;
   }
 
   function closeImageTools(except = null) {

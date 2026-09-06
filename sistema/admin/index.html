@@ -6,7 +6,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
-  <title>Painel | Seu Delivery</title>
+  <title>Painel | Seu Food</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon/favicon.svg">
   <link rel="stylesheet" href="admin.css?v=20260905-image-controls">
   <link rel="stylesheet" href="admin-commerce.css?v=20260906-control-center">
@@ -22,24 +22,25 @@
     .order-items{display:grid;gap:8px;margin:14px 0}.order-item{padding:12px;border-radius:9px;background:#fff;border:1px solid #62085322}.order-item>b{display:block;color:#620853}.order-item small{display:block;margin-top:5px;color:#620853;line-height:1.5}.order-address{margin:10px 0;padding:12px;border-left:4px solid #fcd307;border-radius:7px;background:#fff9cf;font-size:12px;line-height:1.55}.order-meta{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.order-meta span{padding:6px 9px;border-radius:999px;background:#620853;color:#fff;font-size:10px;font-weight:800}.order-notes{padding:10px;border-radius:8px;background:#fff9cf;color:#620853;font-size:11px}
     [hidden]{display:none!important}
   </style>
+  <link rel="stylesheet" href="../../assets/css/panel-brand.css?v=20260906-seufood">
 </head>
 <body>
   <section class="auth-screen" id="auth-screen">
     <form class="auth-card" id="login-form">
-      <div class="auth-brand"><span><img src="../../assets/images/favicon/favicon.svg" alt="Seu Delivery"></span><div><b>Seu Delivery</b><small>PAINEL DE GESTÃO</small></div></div>
+      <div class="auth-brand"><span><img src="../../assets/images/seu-food-panel.png" alt="Seu Food — plataforma de cardápios"></span><div><b>Seu Food</b><small>PAINEL DE GESTÃO</small></div></div>
       <h1>Entrar no painel</h1>
-      <p>Use o usuário administrador criado no Supabase.</p>
+      <p>Entre com seu e-mail e senha para gerenciar sua empresa.</p>
       <label>E-mail<input id="login-email" type="email" autocomplete="username" required></label>
       <label>Senha<input id="login-password" type="password" autocomplete="current-password" required></label>
       <p class="auth-error" id="login-error" hidden></p>
       <button type="submit">Entrar com segurança</button>
-      <div class="setup-box" id="setup-box" hidden>O Supabase ainda não está configurado. Preencha <b>assets/js/supabase-config.js</b> no GitHub.</div>
+      <div class="setup-box" id="setup-box" hidden>Acesso temporariamente indisponível. Entre em contato com o suporte Seu Food.</div>
     </form>
   </section>
 
   <div class="admin-layout" id="admin-app" hidden>
     <aside>
-      <a class="admin-logo" href="../../"><span><img src="../../assets/images/favicon/favicon.svg" alt="Seu Delivery"></span><div><b>Seu Delivery</b><small>GESTÃO DO CARDÁPIO</small></div></a>
+      <a class="admin-logo" href="../../"><span><img src="../../assets/images/seu-food-panel.png" alt="Seu Food — plataforma de cardápios"></span><div><b>Seu Food</b><small>GESTÃO DO CARDÁPIO</small></div></a>
       <nav aria-label="Seções do painel">
         <button class="active" data-tab="dashboard">▦ Visão geral</button>
         <button data-tab="orders">▣ Pedidos <b id="pending-badge">0</b></button>
@@ -145,7 +146,7 @@
   <script src="../../assets/js/r2-config.js"></script>
   <script src="../../assets/js/supabase-store.js?v=20260905-commerce"></script>
   <script src="../../assets/js/web-push.js?v=20260906-push"></script>
-  <script src="github-admin.js?v=20260906-professional-layout"></script>
+  <script src="github-admin.js?v=20260906-seufood-brand"></script>
   <script src="panel-ux.js?v=20260906-template-layout-v2"></script>
 </body>
 </html>

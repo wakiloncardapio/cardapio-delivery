@@ -9,13 +9,14 @@
   <link rel="stylesheet" href="central.css?v=20260905-commerce">
   <link rel="stylesheet" href="central-enhancements.css?v=20260906-control-center">
   <link rel="stylesheet" href="central-commerce.css?v=20260906-control-center">
+  <link rel="stylesheet" href="../../assets/css/panel-brand.css?v=20260906-seufood">
 </head>
 <body>
   <section class="auth" id="auth-screen">
     <form class="auth-card" id="login-form">
-      <div class="brand"><span data-platform-logo>SF</span><div><b>Seu Food</b><small>ADMINISTRAÇÃO CENTRAL</small></div></div>
+      <div class="brand"><span data-platform-logo><img src="../../assets/images/seu-food-panel.png" alt="Seu Food"></span><div><b>Seu Food</b><small>ADMINISTRAÇÃO CENTRAL</small></div></div>
       <h1>Administrar empresas</h1>
-      <p>Entre com o usuário principal do Supabase.</p>
+      <p>Entre com sua conta de administração da plataforma.</p>
       <label>E-mail<input id="login-email" type="email" autocomplete="username" required></label>
       <label>Senha<input id="login-password" type="password" autocomplete="current-password" required></label>
       <p class="error" id="login-error" hidden></p>
@@ -25,7 +26,7 @@
 
   <div id="central-app" hidden>
     <header class="topbar">
-      <div class="topbar-branding"><div class="brand"><span id="platform-logo-trigger" data-platform-logo role="button" tabindex="0" aria-label="Editar logo do painel" aria-expanded="false">SF</span><div><b>Seu Food</b><small>CENTRAL MULTIEMPRESA</small></div></div><div class="platform-logo-actions" id="platform-logo-actions" hidden><small>Sugestão: 600 × 300 px</small><label>Trocar logo<input id="platform-logo-upload" type="file" accept="image/png,image/jpeg,image/webp"></label><button type="button" id="platform-logo-remove">Excluir</button></div></div>
+      <div class="topbar-branding"><div class="brand"><span id="platform-logo-trigger" data-platform-logo><img src="../../assets/images/seu-food-panel.png" alt="Seu Food"></span><div><b>Seu Food</b><small>CENTRAL MULTIEMPRESA</small></div></div><div class="platform-logo-actions" id="platform-logo-actions" hidden><small>Sugestão: 600 × 300 px</small><label>Trocar logo<input id="platform-logo-upload" type="file" accept="image/png,image/jpeg,image/webp"></label><button type="button" id="platform-logo-remove">Excluir</button></div></div>
       <nav><a href="../admin/?loja=demonstracao">Abrir demonstração</a><button id="logout">Sair</button></nav>
     </header>
 
@@ -89,7 +90,7 @@
   <script src="../../assets/js/supabase-config.js"></script>
   <script src="../../assets/js/r2-config.js"></script>
   <script src="../../assets/js/supabase-store.js?v=20260905-commerce"></script>
-  <script src="central.js?v=20260906-professional-layout"></script>
+  <script src="central.js?v=20260906-seufood-brand"></script>
   <script src="central-ux.js?v=20260906-professional-layout"></script>
 </body>
 </html>
