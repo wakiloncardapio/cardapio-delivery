@@ -87,7 +87,11 @@ Deno.serve(async req => {
       return json({ error: 'O Mercado Pago recusou o token. Copie novamente o Access Token da conta correta.' }, 400);
     }
 
-    const liveMode = accessToken.startsWith('APP_USR-');
+    // Credenciais de teste novas também podem começar com APP_USR. Use os
+    // metadados da conta e a Public Key para não confundir sandbox com produção.
+    const testCredential = account.test_user === true ||
+      accessToken.startsWith('TEST-') || publicKey.startsWith('TEST-');
+    const liveMode = !testCredential;
     const { error } = await db.rpc('save_mercadopago_credentials', {
       target_store_id: storeId,
       p_access_token: accessToken,
