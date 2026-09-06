@@ -24,6 +24,8 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
+      - name: Publicar serviço autenticado de Web Push
+        run: supabase functions deploy web-push --project-ref "$PROJECT_ID" --no-verify-jwt
       - name: Criar estrutura privada de notificações
         shell: python
         run: |
@@ -40,7 +42,9 @@ jobs:
               with urllib.request.urlopen(req, timeout=120) as response:
                   if response.status != 200: raise SystemExit('Migração não aplicada.')
           except urllib.error.HTTPError as error:
-              raise SystemExit('Falha na migração Web Push. HTTP ' + str(error.code))
+              raw = error.read().decode('utf-8', errors='replace')
+              try: detail = str(json.loads(raw).get('message', ''))[:300]
+              except ValueError: detail = 'Resposta não JSON do serviço.'
+              detail = detail.replace(token, '[redigido]')
+              raise SystemExit('Falha na migração Web Push. HTTP ' + str(error.code) + ': ' + detail)
           print('Estrutura Web Push aplicada.')
-      - name: Publicar serviço autenticado de Web Push
-        run: supabase functions deploy web-push --project-ref "$PROJECT_ID" --no-verify-jwt
