@@ -137,6 +137,7 @@ Deno.serve(async req => {
     const pixEndpoint = pixTestMode
       ? 'https://api.mercadopago.com/v1/orders'
       : 'https://api.mercadopago.com/v1/payments';
+    const orderApiIdempotencyKey = `${String(order.id).slice(0, -1)}${String(order.id).endsWith('2') ? '3' : '2'}`;
     const pixTestPayload = {
           type: 'online',
           external_reference: order.id,
@@ -166,7 +167,9 @@ Deno.serve(async req => {
     const pixPayload = pixTestMode ? pixTestPayload : pixLivePayload;
     let response = await fetch(pixEndpoint, {
       method: 'POST',
-      headers: commonHeaders,
+      headers: pixTestMode
+        ? { ...commonHeaders, 'X-Idempotency-Key': orderApiIdempotencyKey }
+        : commonHeaders,
       body: JSON.stringify(pixPayload)
     });
     let result = await response.json().catch(() => ({}));
@@ -177,7 +180,7 @@ Deno.serve(async req => {
       /unauthorized use of live credentials/i.test(JSON.stringify(result))) {
       response = await fetch('https://api.mercadopago.com/v1/orders', {
         method: 'POST',
-        headers: commonHeaders,
+        headers: { ...commonHeaders, 'X-Idempotency-Key': orderApiIdempotencyKey },
         body: JSON.stringify(pixTestPayload)
       });
       result = await response.json().catch(() => ({}));
