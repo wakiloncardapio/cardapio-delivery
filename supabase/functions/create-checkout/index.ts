@@ -125,20 +125,42 @@ Deno.serve(async req => {
   };
 
   if (paymentMode === 'pix') {
-    const response = await fetch('https://api.mercadopago.com/v1/payments', {
+    const pixTestMode = credentials.liveMode === false;
+    const pixEndpoint = pixTestMode
+      ? 'https://api.mercadopago.com/v1/orders'
+      : 'https://api.mercadopago.com/v1/payments';
+    const pixPayload = pixTestMode
+      ? {
+          type: 'online',
+          external_reference: order.id,
+          total_amount: money(order.total),
+          notification_url: notificationUrl,
+          payer: {
+            email: 'test_user_br@testuser.com',
+            first_name: 'APRO'
+          },
+          transactions: {
+            payments: [{
+              amount: money(order.total),
+              payment_method: { id: 'pix', type: 'bank_transfer' }
+            }]
+          }
+        }
+      : {
+          transaction_amount: Number(order.total),
+          description: `Pedido ${order.order_number}`,
+          payment_method_id: 'pix',
+          external_reference: order.id,
+          notification_url: notificationUrl,
+          payer: {
+            email,
+            first_name: String(customer.name || '').trim().split(/\s+/)[0] || 'Cliente'
+          }
+        };
+    const response = await fetch(pixEndpoint, {
       method: 'POST',
       headers: commonHeaders,
-      body: JSON.stringify({
-        transaction_amount: Number(order.total),
-        description: `Pedido ${order.order_number}`,
-        payment_method_id: 'pix',
-        external_reference: order.id,
-        notification_url: notificationUrl,
-        payer: {
-          email,
-          first_name: String(customer.name || '').trim().split(/\s+/)[0] || 'Cliente'
-        }
-      })
+      body: JSON.stringify(pixPayload)
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -152,7 +174,9 @@ Deno.serve(async req => {
       return json({ error: failure.message }, response.status);
     }
     const details = paymentDetails(result);
-    if (!details.qrCode || !details.qrCodeBase64) {
+    // A Orders API de teste retorna o Pix copia e cola e pode deixar a imagem
+    // base64 vazia. O cardápio continua oferecendo o código e o ticket seguro.
+    if (!details.qrCode) {
       await recordPaymentAttempt(db, {
         storeId, orderId: order.id, orderNumber: order.order_number,
         paymentMethod: 'pix', status: 'error', amount: order.total,
