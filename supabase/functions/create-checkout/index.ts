@@ -125,7 +125,15 @@ Deno.serve(async req => {
   };
 
   if (paymentMode === 'pix') {
-    const pixTestMode = credentials.liveMode === false;
+    // Confirme o ambiente diretamente no Mercado Pago. Isso também corrige
+    // credenciais de teste que foram salvas antes de a plataforma passar a usar
+    // o prefixo APP_USR no sandbox.
+    const accountResponse = await fetch('https://api.mercadopago.com/users/me', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    const account = await accountResponse.json().catch(() => ({}));
+    const pixTestMode = credentials.liveMode === false || account.test_user === true ||
+      accessToken.startsWith('TEST-') || credentials.publicKey.startsWith('TEST-');
     const pixEndpoint = pixTestMode
       ? 'https://api.mercadopago.com/v1/orders'
       : 'https://api.mercadopago.com/v1/payments';
