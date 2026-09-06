@@ -1,6 +1,6 @@
 (function () {
-  function buildSettingsWorkspace() {
-    const grid = document.querySelector('[data-panel="settings"] .settings-grid');
+  function buildSettingsWorkspace(panelName, placeholderText) {
+    const grid = document.querySelector(`[data-panel="${panelName}"] .settings-grid`);
     if (!grid || grid.classList.contains('settings-workspace')) return;
     const cards = [...grid.querySelectorAll(':scope > .card')];
     if (!cards.length) return;
@@ -12,7 +12,7 @@
     detail.className = 'settings-detail';
     const placeholder = document.createElement('div');
     placeholder.className = 'settings-placeholder';
-    placeholder.textContent = 'Escolha uma área ao lado para abrir suas configurações.';
+    placeholder.textContent = placeholderText;
     detail.append(placeholder);
 
     cards.forEach((card, index) => {
@@ -53,5 +53,6 @@
     grid.replaceChildren(menu, detail);
   }
 
-  buildSettingsWorkspace();
+  buildSettingsWorkspace('settings', 'Escolha uma área ao lado para abrir suas configurações.');
+  buildSettingsWorkspace('appearance', 'Escolha o elemento visual que deseja personalizar.');
 })();

@@ -1,0 +1,45 @@
+/* Proteção global contra rolagem lateral causada por conteúdo dinâmico. */
+html,body{width:100%;max-width:100%;overflow-x:clip}
+body{position:relative}
+*,*::before,*::after{box-sizing:border-box}
+img,svg,video,canvas,iframe{max-width:100%}
+main,section,article,header,footer,form,fieldset,
+.topbar,.hero,.hero-copy,.info-strip,.daily-offer,.menu-section,.section-title,
+.products,.product-card,.product-copy,.whatsapp-callout,.footer-main,.footer-business,
+.overlay,.modal,.product-modal-head,.product-presentation-copy,.addon-list,.addon-options,
+.modal-footer,.product-presentation-footer,.product-actions,.cart,.cart-items,.cart-line,
+.checkout-head,.checkout-step,.form-grid,.payments,.summary,.success,.success-links,
+.cookie-consent,.cookie-copy,.cookie-actions,.cookie-preferences{
+  min-width:0;
+  max-width:100%;
+}
+p,h1,h2,h3,h4,label,span,b,strong,small,a,button,input,textarea,select{
+  overflow-wrap:anywhere;
+}
+input,textarea,select{min-width:0;max-width:100%}
+
+/* Estas duas faixas têm rolagem horizontal intencional e independente. */
+.categories,.suggestion-track{
+  max-width:100%;
+  overscroll-behavior-inline:contain;
+}
+
+@media(max-width:700px){
+  .topbar,.hero,.info-strip,.daily-offer,.menu-section,.whatsapp-callout,.footer,
+  .overlay,.modal,.cart,.checkout-modal,.cookie-consent,.cookie-preferences{
+    max-width:100vw;
+  }
+  .section-title,.info-strip article,.daily-offer,.footer-main,.footer-business-grid,
+  .product-card>button,.product-modal-head,.addon-option,.product-presentation-footer,
+  .product-actions,.cart-line,.checkout-head,.checkout-step,.form-grid,.payments,
+  .pix-copy,.change-panel>div,.cookie-copy,.cookie-actions{
+    min-width:0;
+  }
+  .product-presentation-footer .product-actions,
+  #product-overlay .product-presentation-footer .product-actions{
+    grid-template-columns:minmax(92px,auto) minmax(0,1fr);
+  }
+  .quantity{max-width:100%}
+}
+
+@supports not (overflow:clip){html,body{overflow-x:hidden}}
