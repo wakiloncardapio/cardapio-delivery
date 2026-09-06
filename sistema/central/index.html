@@ -7,8 +7,8 @@
   <title>Central Seu Food</title>
   <link rel="icon" type="image/svg+xml" href="../../assets/images/favicon/favicon.svg">
   <link rel="stylesheet" href="central.css?v=20260905-commerce">
-  <link rel="stylesheet" href="central-enhancements.css?v=20260905-image-menu">
-  <link rel="stylesheet" href="central-commerce.css?v=20260905-commerce">
+  <link rel="stylesheet" href="central-enhancements.css?v=20260906-control-center">
+  <link rel="stylesheet" href="central-commerce.css?v=20260906-control-center">
 </head>
 <body>
   <section class="auth" id="auth-screen">
@@ -56,7 +56,7 @@
       <section class="commerce-overview">
         <header><div><small>INTELIGÊNCIA COMERCIAL</small><h2>Faturamento e pagamentos por empresa</h2><p>Os totais, clientes e integrações permanecem isolados por empresa.</p></div></header>
         <div class="commerce-table" id="store-commerce"></div>
-        <div class="payment-failures-card"><header><div><small>ALERTAS DO CHECKOUT</small><h3>PIX e cartão não aprovados</h3></div><span id="payment-failure-badge">0 alertas</span></header><div id="payment-failures"></div></div>
+        <div class="payment-failures-card is-collapsed" id="payment-failures-card"><button type="button" class="payment-failures-toggle" id="payment-failures-toggle" aria-expanded="false"><div><small>ALERTAS DO CHECKOUT</small><h3>PIX e cartão não aprovados</h3><p>Clique para ver a empresa e o motivo de cada falha.</p></div><span id="payment-failure-badge">0 alertas</span><i aria-hidden="true"></i></button><div id="payment-failures" hidden></div></div>
       </section>
 
       <section class="store-list" id="store-list"></section>
@@ -89,6 +89,6 @@
   <script src="../../assets/js/supabase-config.js"></script>
   <script src="../../assets/js/r2-config.js"></script>
   <script src="../../assets/js/supabase-store.js?v=20260905-commerce"></script>
-  <script src="central.js?v=20260905-commerce"></script>
+  <script src="central.js?v=20260906-control-center"></script>
 </body>
 </html>

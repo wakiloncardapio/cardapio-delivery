@@ -38,7 +38,13 @@
     settings.primaryColor = /^#[0-9a-f]{6}$/i.test(settings.primaryColor || '') ? settings.primaryColor : '#620853';
     settings.accentColor = /^#[0-9a-f]{6}$/i.test(settings.accentColor || '') ? settings.accentColor : '#fcd307';
     settings.brandBrightColor = /^#[0-9a-f]{6}$/i.test(settings.brandBrightColor || '') ? settings.brandBrightColor : settings.primaryColor;
+    settings.pageColor = /^#[0-9a-f]{6}$/i.test(settings.pageColor || '') ? settings.pageColor : '#fffaf2';
+    settings.surfaceColor = /^#[0-9a-f]{6}$/i.test(settings.surfaceColor || '') ? settings.surfaceColor : '#ffffff';
+    settings.buttonColor = /^#[0-9a-f]{6}$/i.test(settings.buttonColor || '') ? settings.buttonColor : settings.primaryColor;
+    settings.buttonTextColor = /^#[0-9a-f]{6}$/i.test(settings.buttonTextColor || '') ? settings.buttonTextColor : '#ffffff';
+    settings.containerRadius = Math.min(32, Math.max(0, Number(settings.containerRadius ?? 18)));
     settings.bodyFont = ['arial','inter','trebuchet','poppins'].includes(settings.bodyFont) ? settings.bodyFont : 'arial';
+    if (!settings.headingFontVersion) { settings.headingFont = 'fredoka'; settings.headingFontVersion = 1; }
     settings.headingFont = ['fredoka','georgia','arial','inter','poppins'].includes(settings.headingFont) ? settings.headingFont : 'fredoka';
     settings.cardEffect = ['clean','shine','glass','neon'].includes(settings.cardEffect) ? settings.cardEffect : 'clean';
     settings.customCss = typeof settings.customCss === 'string' ? settings.customCss.slice(0, 8000) : '';
@@ -107,6 +113,11 @@
     document.documentElement.style.setProperty('--brand', settings.primaryColor);
     document.documentElement.style.setProperty('--accent', settings.accentColor);
     document.documentElement.style.setProperty('--brand-bright', settings.brandBrightColor);
+    document.documentElement.style.setProperty('--paper', settings.pageColor);
+    document.documentElement.style.setProperty('--surface', settings.surfaceColor);
+    document.documentElement.style.setProperty('--button-bg', settings.buttonColor);
+    document.documentElement.style.setProperty('--button-text', settings.buttonTextColor);
+    document.documentElement.style.setProperty('--container-radius', `${settings.containerRadius}px`);
     document.documentElement.style.setProperty('--body-font', fonts[settings.bodyFont] || fonts.arial);
     document.documentElement.style.setProperty('--heading-font', fonts[settings.headingFont] || fonts.fredoka);
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', settings.primaryColor);

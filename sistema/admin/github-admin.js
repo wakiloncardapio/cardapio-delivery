@@ -259,8 +259,16 @@
     if (!/^#[0-9a-f]{6}$/i.test(settings.primaryColor || '')) set('primaryColor', '#620853');
     if (!/^#[0-9a-f]{6}$/i.test(settings.accentColor || '')) set('accentColor', '#fcd307');
     if (!/^#[0-9a-f]{6}$/i.test(settings.brandBrightColor || '')) set('brandBrightColor', '#620853');
+    if (!/^#[0-9a-f]{6}$/i.test(settings.pageColor || '')) set('pageColor', '#fffaf2');
+    if (!/^#[0-9a-f]{6}$/i.test(settings.surfaceColor || '')) set('surfaceColor', '#ffffff');
+    if (!/^#[0-9a-f]{6}$/i.test(settings.buttonColor || '')) set('buttonColor', settings.primaryColor);
+    if (!/^#[0-9a-f]{6}$/i.test(settings.buttonTextColor || '')) set('buttonTextColor', '#ffffff');
+    if (!Number.isFinite(Number(settings.containerRadius))) set('containerRadius', 18);
     if (!['arial','inter','trebuchet','poppins'].includes(settings.bodyFont)) set('bodyFont', 'arial');
+    if (!settings.headingFontVersion) { set('headingFont', 'fredoka'); set('headingFontVersion', 1); }
     if (!['fredoka','georgia','arial','inter','poppins'].includes(settings.headingFont)) set('headingFont', 'fredoka');
+    if (typeof settings.browserNotificationsEnabled !== 'boolean') set('browserNotificationsEnabled', false);
+    if (typeof settings.notificationSoundEnabled !== 'boolean') set('notificationSoundEnabled', true);
     if (!['clean','shine','glass','neon'].includes(settings.cardEffect)) set('cardEffect', 'clean');
     if (typeof settings.customCss !== 'string') set('customCss', '');
     if (typeof settings.autoOpenWhatsApp !== 'boolean') set('autoOpenWhatsApp', false);
@@ -346,11 +354,19 @@
     $('#accent-text').value = validThemeColor(settings.accentColor, '#fcd307');
     $('#brand-bright-color').value = validThemeColor(settings.brandBrightColor, '#620853');
     $('#brand-bright-text').value = validThemeColor(settings.brandBrightColor, '#620853');
+    [['page', settings.pageColor, '#fffaf2'], ['surface', settings.surfaceColor, '#ffffff'], ['button', settings.buttonColor, settings.primaryColor], ['button-text', settings.buttonTextColor, '#ffffff']].forEach(([name, value, fallback]) => {
+      $(`#${name}-color`).value = validThemeColor(value, fallback);
+      $(`#${name}-text`).value = validThemeColor(value, fallback);
+    });
+    $('#container-radius').value = Number(settings.containerRadius ?? 18);
     $('#body-font').value = settings.bodyFont || 'arial';
     $('#heading-font').value = settings.headingFont || 'fredoka';
     $('#card-effect').value = settings.cardEffect || 'clean';
     $('#custom-css').value = settings.customCss || '';
     $('#order-redirect-enabled').checked = Boolean(settings.orderRedirectEnabled);
+    $('#browser-notifications-enabled').checked = Boolean(settings.browserNotificationsEnabled);
+    $('#notification-sound-enabled').checked = settings.notificationSoundEnabled !== false;
+    updateNotificationPermissionStatus();
     $('#daily-offer-enabled').checked = Boolean(settings.dailyOffer.enabled);
     $('#daily-offer-title').value = settings.dailyOffer.title || '';
     $('#daily-offer-description').value = settings.dailyOffer.description || '';
@@ -406,14 +422,22 @@
     settings.primaryColor = validThemeColor($('#primary-text').value, '#620853');
     settings.accentColor = validThemeColor($('#accent-text').value, '#fcd307');
     settings.brandBrightColor = validThemeColor($('#brand-bright-text').value, settings.primaryColor);
+    settings.pageColor = validThemeColor($('#page-text').value, '#fffaf2');
+    settings.surfaceColor = validThemeColor($('#surface-text').value, '#ffffff');
+    settings.buttonColor = validThemeColor($('#button-text').value, settings.primaryColor);
+    settings.buttonTextColor = validThemeColor($('#button-text-text').value, '#ffffff');
+    settings.containerRadius = Math.min(32, Math.max(0, Number($('#container-radius').value || 18)));
     settings.bodyFont = $('#body-font').value;
     settings.headingFont = $('#heading-font').value;
+    settings.headingFontVersion = 1;
     settings.cardEffect = $('#card-effect').value;
     settings.customCss = $('#custom-css').value.trim().slice(0, 8000);
     settings.whatsappCloudEnabled = $('#whatsapp-cloud-enabled').checked;
     settings.autoOpenWhatsApp = $('#auto-open-whatsapp').checked;
     settings.gatewayEnabled = $('#gateway-enabled').checked;
     settings.orderRedirectEnabled = $('#order-redirect-enabled').checked;
+    settings.browserNotificationsEnabled = $('#browser-notifications-enabled').checked;
+    settings.notificationSoundEnabled = $('#notification-sound-enabled').checked;
     settings.dailyOffer = {
       enabled: $('#daily-offer-enabled').checked,
       title: $('#daily-offer-title').value.trim(),
@@ -446,11 +470,11 @@
       const toggle = document.createElement('button');
       toggle.type = 'button';
       toggle.className = 'config-toggle';
-      toggle.setAttribute('aria-expanded', index === 0 ? 'true' : 'false');
-      toggle.innerHTML = '<span>' + esc(label) + '</span><b aria-hidden="true">⌄</b>';
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.innerHTML = '<span>' + esc(label) + '</span><b aria-hidden="true"><i></i></b>';
       card.prepend(toggle);
       card.classList.add('config-collapsible');
-      card.classList.toggle('config-open', index === 0);
+      card.classList.remove('config-open');
       toggle.onclick = () => {
         const opening = !card.classList.contains('config-open');
         cards.forEach(item => {
@@ -481,7 +505,7 @@
       row.querySelector('[data-zone-postal]').oninput = event => { zone.postalPrefixes = splitRuleValues(event.target.value); };
       row.querySelector('[data-zone-fee]').oninput = event => { zone.fee = Math.max(0, Number(event.target.value) || 0); };
       row.querySelector('[data-zone-deliver]').onchange = event => { zone.deliver = event.target.checked; row.classList.toggle('blocked', !zone.deliver); };
-      row.querySelector('[data-remove-zone]').onclick = () => { catalog.settings.deliveryZones = zones.filter(item => item.id !== zone.id); renderDeliveryZones(); };
+      row.querySelector('[data-remove-zone]').onclick = () => { if (!window.confirm(`Excluir a regra de entrega "${zone.name || 'sem nome'}"?`)) return; catalog.settings.deliveryZones = zones.filter(item => item.id !== zone.id); renderDeliveryZones(); };
       row.classList.toggle('blocked', zone.deliver === false);
     });
   }
@@ -506,6 +530,7 @@
       card.querySelector('[data-notification-message]').oninput = change => { entry.message = change.target.value; };
       card.querySelector('[data-notification-upload]').onchange = change => upload(change.target, 'notification', event);
       card.querySelector('[data-remove-notification-image]').onclick = async () => {
+        if (!window.confirm('Excluir esta imagem da mensagem automática?')) return;
         entry.imageUrl = '';
         renderCrmNotifications();
         await persistCatalogImageChange('Imagem da mensagem excluída.');
@@ -1254,8 +1279,9 @@
 
   function renderProducts() {
     const products = catalog.products || [];
-    const categories = catalog.categories || [];
-    const knownCategoryIds = new Set(categories.map(category => String(category.id)));
+    const allCategories = catalog.categories || [];
+    const categories = allCategories.filter(category => category.active !== false);
+    const knownCategoryIds = new Set(allCategories.map(category => String(category.id)));
     const hasUncategorized = products.some(product => !knownCategoryIds.has(String(product.categoryId)));
     const sections = hasUncategorized
       ? [...categories, { id: '__uncategorized__', name: 'Sem categoria', emoji: '•', active: false, imageUrl: '' }]
@@ -1366,7 +1392,7 @@
           <input aria-label="Nome da categoria" value="${esc(category.name)}" data-cat-name="${esc(category.id)}">
         </div>
         <div class="category-image-actions"><label class="category-upload">Trocar imagem<input type="file" accept="image/jpeg,image/png,image/webp" data-cat-upload="${esc(category.id)}"></label><button type="button" class="image-delete-button" data-cat-image-remove="${esc(category.id)}" ${category.imageUrl ? '' : 'hidden'}>Excluir</button><small class="image-size-hint">Sugestão: 1200 × 650 px</small></div>
-        <label class="category-active"><input type="checkbox" ${category.active ? 'checked' : ''} data-cat-active="${esc(category.id)}"> Ativa</label>
+        <label class="category-active"><input type="checkbox" ${category.active ? 'checked' : ''} data-cat-active="${esc(category.id)}"> Ativa</label><button type="button" class="category-delete-button" data-cat-delete="${esc(category.id)}">Excluir categoria</button>
       </div>`).join('');
     $('#category-editor').querySelectorAll('[data-cat-emoji],[data-cat-name]').forEach(input => {
       input.oninput = () => {
@@ -1384,13 +1410,25 @@
         renderProducts();
       };
     });
+    $('#category-editor').querySelectorAll('[data-cat-delete]').forEach(button => {
+      button.onclick = () => {
+        const id = button.dataset.catDelete;
+        const category = catalog.categories.find(item => String(item.id) === String(id));
+        const productCount = catalog.products.filter(product => String(product.categoryId) === String(id)).length;
+        if (!category || !window.confirm(`Excluir a categoria "${category.name}" e ${productCount} produto${productCount === 1 ? '' : 's'} ligado${productCount === 1 ? '' : 's'} a ela? Esta alteração só será definitiva após publicar.`)) return;
+        catalog.categories = catalog.categories.filter(item => String(item.id) !== String(id));
+        catalog.products = catalog.products.filter(product => String(product.categoryId) !== String(id));
+        renderCategories(); renderProducts();
+        notice('Categoria e produtos vinculados removidos. Publique para confirmar.');
+      };
+    });
     $('#category-editor').querySelectorAll('[data-cat-upload]').forEach(input => {
       input.onchange = () => upload(input, 'category', input.dataset.catUpload);
     });
     $('#category-editor').querySelectorAll('[data-cat-image-remove]').forEach(button => {
       button.onclick = async () => {
         const category = catalog.categories.find(item => item.id === button.dataset.catImageRemove);
-        if (!category) return;
+        if (!category || !window.confirm(`Excluir a imagem da categoria "${category.name}"?`)) return;
         category.imageUrl = '';
         renderCategories();
         renderProducts();
@@ -1414,6 +1452,7 @@
     });
     editor.querySelectorAll('[data-info-icon-remove]').forEach(button => {
       button.onclick = async () => {
+        if (!window.confirm('Excluir este ícone personalizado?')) return;
         icons[button.dataset.infoIconRemove] = '';
         renderInfoIcons();
         await persistCatalogImageChange('Ícone excluído.');
@@ -1550,7 +1589,7 @@
         markEditorDirty();
         renderGroups();
       };
-      card.querySelector('[data-remove-group]').onclick = () => { editing.addonGroups = editing.addonGroups.filter(item => item.id !== group.id); markEditorDirty(); renderGroups(); };
+      card.querySelector('[data-remove-group]').onclick = () => { if (!window.confirm(`Excluir o grupo "${group.name || 'sem nome'}" e todas as opções dele?`)) return; editing.addonGroups = editing.addonGroups.filter(item => item.id !== group.id); markEditorDirty(); renderGroups(); };
       card.querySelector('[data-add-option]').onclick = () => {
         group.options.push({ id: crypto.randomUUID(), name: '', price: group.priceMode === 'final' ? Number($('#edit-price').value || editing.price || 0) : 0, imageUrl: '', available: true });
         markEditorDirty();
@@ -1566,8 +1605,8 @@
         row.querySelector('[data-option-image]').onchange = event => { option.imageUrl = event.target.value.trim(); markEditorDirty(); renderGroups(); };
         row.querySelector('[data-option-available]').onchange = event => { option.available = event.target.checked; };
         row.querySelector('[data-option-upload]').onchange = event => upload(event.target, 'option', option.id);
-        row.querySelector('[data-remove-option-image]').onclick = () => { option.imageUrl = ''; markEditorDirty(); renderGroups(); };
-        row.querySelector('[data-remove-option]').onclick = () => { group.options = group.options.filter(item => item.id !== option.id); markEditorDirty(); renderGroups(); };
+        row.querySelector('[data-remove-option-image]').onclick = () => { if (!window.confirm('Excluir a imagem desta opção?')) return; option.imageUrl = ''; markEditorDirty(); renderGroups(); };
+        row.querySelector('[data-remove-option]').onclick = () => { if (!window.confirm(`Excluir a opção "${option.name || 'sem nome'}"?`)) return; group.options = group.options.filter(item => item.id !== option.id); markEditorDirty(); renderGroups(); };
       });
     });
   }
@@ -1604,6 +1643,8 @@
   }
 
   async function removePublishedImage(target) {
+    const labels = { logo: 'logo', banner: 'banner', favicon: 'favicon', offer: 'imagem da oferta' };
+    if (!window.confirm(`Excluir ${labels[target] || 'esta imagem'}? Esta ação será aplicada ao cardápio publicado.`)) return;
     if (target === 'logo') { catalog.settings.logoUrl = ''; $('#logo-url').value = ''; }
     if (target === 'banner') { catalog.settings.bannerUrl = ''; $('#banner-url').value = ''; }
     if (target === 'favicon') { catalog.settings.faviconUrl = ''; $('#favicon-url').value = ''; }
@@ -1716,11 +1757,48 @@
     }
   }
 
+  function updateNotificationPermissionStatus() {
+    const box = $('#notification-permission-status');
+    if (!box) return;
+    if (!('Notification' in window)) { box.textContent = 'Este navegador não oferece notificações na tela.'; box.className = 'notification-permission error'; return; }
+    const labels = { granted: 'Avisos permitidos neste aparelho.', denied: 'Avisos bloqueados pelo navegador. Libere nas configurações do site.', default: 'Permissão ainda não solicitada.' };
+    box.textContent = labels[Notification.permission] || labels.default;
+    box.className = 'notification-permission ' + (Notification.permission === 'granted' ? 'allowed' : Notification.permission === 'denied' ? 'error' : '');
+  }
+  async function enableBrowserNotifications() {
+    if (!('Notification' in window)) return updateNotificationPermissionStatus();
+    const permission = await Notification.requestPermission();
+    $('#browser-notifications-enabled').checked = permission === 'granted';
+    catalog.settings.browserNotificationsEnabled = permission === 'granted';
+    updateNotificationPermissionStatus();
+    if (permission === 'granted') notice('Avisos liberados neste aparelho. Publique as alterações para manter a opção ativa.');
+  }
+  function playNewOrderSound() {
+    if (catalog.settings.notificationSoundEnabled === false) return;
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext, context = new AudioContextClass(), oscillator = context.createOscillator(), gain = context.createGain();
+      oscillator.frequency.setValueAtTime(880, context.currentTime); oscillator.frequency.setValueAtTime(1175, context.currentTime + .16);
+      gain.gain.setValueAtTime(.001, context.currentTime); gain.gain.exponentialRampToValueAtTime(.18, context.currentTime + .02); gain.gain.exponentialRampToValueAtTime(.001, context.currentTime + .42);
+      oscillator.connect(gain); gain.connect(context.destination); oscillator.start(); oscillator.stop(context.currentTime + .45); oscillator.onended = () => context.close();
+    } catch (_) {}
+    try { navigator.vibrate?.([180, 80, 180]); } catch (_) {}
+  }
+  async function notifyNewOrders(newOrders) {
+    playNewOrderSound();
+    if (!catalog.settings.browserNotificationsEnabled || !('Notification' in window) || Notification.permission !== 'granted') return;
+    const first = newOrders[0] || {}, title = newOrders.length === 1 ? 'Novo pedido recebido' : `${newOrders.length} novos pedidos`;
+    const body = newOrders.length === 1 ? `${first.order_number || 'Novo pedido'} · ${money(first.total || 0)}` : 'Abra o painel para conferir os novos pedidos.';
+    try {
+      const registration = await navigator.serviceWorker?.ready;
+      if (registration) await registration.showNotification(title, { body, icon: '../../assets/images/favicon/favicon.svg', badge: '../../assets/images/favicon/favicon.svg', tag: 'seu-food-new-order', renotify: true, data: { url: location.href } });
+      else new Notification(title, { body, icon: '../../assets/images/favicon/favicon.svg', tag: 'seu-food-new-order' });
+    } catch (_) {}
+  }
+  function registerOrderNotificationWorker() { if ('serviceWorker' in navigator) navigator.serviceWorker.register('../../service-worker.js', { scope: '../../' }).catch(() => {}); }
+
   function startOrderPolling() {
     clearInterval(orderRefreshTimer);
-    orderRefreshTimer = setInterval(() => {
-      if (!document.hidden) refreshOrders(false);
-    }, 8000);
+    orderRefreshTimer = setInterval(() => refreshOrders(false), 8000);
   }
 
   async function refreshOrders(showConfirmation = true) {
@@ -1739,6 +1817,7 @@
       if (newOrders.length) {
         notice(newOrders.length === 1 ? 'Novo pedido recebido!' : `${newOrders.length} novos pedidos recebidos!`);
         document.title = `(${newOrders.length}) Novo pedido | ${catalog.settings.establishmentName || catalog.settings.storeName || 'Seu Delivery'}`;
+        notifyNewOrders(newOrders);
       } else if (showConfirmation === true) {
         notice('Pedidos atualizados.');
       }
@@ -1832,7 +1911,9 @@
     $('#save-all').onclick = saveAll;
     $('#save-payment-connection').onclick = savePaymentConnection;
     $('#disconnect-payment-connection').onclick = disconnectPaymentConnection;
-    ['primary','accent','brand-bright'].forEach(name => {
+    $('#enable-browser-notifications').onclick = enableBrowserNotifications;
+    registerOrderNotificationWorker();
+    ['primary','accent','brand-bright','page','surface','button','button-text'].forEach(name => {
       const color = $(`#${name}-color`);
       const text = $(`#${name}-text`);
       color.oninput = () => { text.value = color.value.toLowerCase(); };
@@ -2013,7 +2094,7 @@
     $('#daily-offer-image').oninput = event => { catalog.settings.dailyOffer.imageUrl = event.target.value.trim(); renderPreviews(); };
     $('#edit-image').oninput = event => { if (editing) { editing.imageUrl = event.target.value; renderProductPhoto(); } };
     $('#remove-product-image').onclick = () => {
-      if (!editing) return;
+      if (!editing || !window.confirm('Excluir a imagem deste produto?')) return;
       editing.imageUrl = '';
       $('#edit-image').value = '';
       markEditorDirty();

@@ -6,6 +6,8 @@
   let platform = { stores: [], members: [], domains: [], branding: { logo_url: '' }, commerce: { by_store: [], failures: [], totals: {} } };
   let query = '';
   let statusFilter = 'all';
+  let openStoreId = '';
+  let paymentFailuresOpen = false;
 
   function notice(message, error = false, link = '') {
     const box = $('#notice');
@@ -82,7 +84,7 @@
       const approval = Number(metrics.begin_checkout || 0) > 0
         ? `${Math.min(100, Math.round((Number(metrics.paid_orders || 0) / Number(metrics.begin_checkout || 1)) * 100))}% aprovação`
         : 'Sem dados';
-      return `<div class="commerce-row"><span><b>${esc(store.name)}</b><small>/${esc(store.slug)}</small></span><strong>${esc(money(metrics.revenue || 0))}</strong><span>${Number(metrics.orders || 0).toLocaleString('pt-BR')}</span><span>${Number(metrics.customers || 0).toLocaleString('pt-BR')}</span><span><b>${Number(metrics.begin_checkout || 0).toLocaleString('pt-BR')}</b><small>${esc(approval)}</small></span><span class="connection ${payment.connected && payment.enabled ? 'connected' : ''}">${payment.connected && payment.enabled ? 'Mercado Pago conectado' : 'Não conectado'}</span></div>`;
+      return `<button type="button" class="commerce-row commerce-store-row" data-open-store="${store.id}"><span class="commerce-company">${storeLogo(store, 'commerce-logo')}<span><b>${esc(store.name)}</b><small>/${esc(store.slug)}</small></span></span><strong>${esc(money(metrics.revenue || 0))}</strong><span>${Number(metrics.orders || 0).toLocaleString('pt-BR')}</span><span>${Number(metrics.customers || 0).toLocaleString('pt-BR')}</span><span><b>${Number(metrics.begin_checkout || 0).toLocaleString('pt-BR')}</b><small>${esc(approval)}</small></span><span class="connection ${payment.connected && payment.enabled ? 'connected' : ''}">${payment.connected && payment.enabled ? 'Mercado Pago conectado' : 'Não conectado'}</span></button>`;
     }).join('')}` : '<div class="empty">Nenhuma empresa para analisar.</div>';
 
     const failures = platform.commerce?.failures || [];
@@ -90,8 +92,11 @@
     $('#payment-failures').innerHTML = failures.length ? failures.map(failure => {
       const store = platform.stores.find(item => item.id === failure.store_id);
       const date = failure.occurred_at ? new Date(failure.occurred_at).toLocaleString('pt-BR') : '';
-      return `<article class="payment-failure"><span><b>${esc(store?.name || 'Empresa')}</b><small>${esc(failure.order_number || 'Pedido sem número')} · ${esc(date)}</small></span><span><b>${esc(String(failure.payment_method || '').includes('pix') ? 'PIX' : 'Cartão')}</b><small>${esc(money(failure.amount || 0))}</small></span><p><b>${esc(failure.reason_code || 'não_aprovado')}</b><span>${esc(paymentFailureReason(failure))}</span></p></article>`;
+      return `<article class="payment-failure"><span class="failure-company">${store ? storeLogo(store, 'failure-logo') : '<span class="failure-logo">?</span>'}<span><b>${esc(store?.name || 'Empresa não identificada')}</b><small>${esc(failure.order_number || 'Pedido sem número')} · ${esc(date)}</small></span></span><span><b>${esc(String(failure.payment_method || '').includes('pix') ? 'PIX' : 'Cartão')}</b><small>${esc(money(failure.amount || 0))}</small></span><p><b>${esc(failure.reason_code || 'não_aprovado')}</b><span>${esc(paymentFailureReason(failure))}</span></p></article>`;
     }).join('') : '<div class="empty success-empty">Nenhuma falha de pagamento registrada.</div>';
+    $('#payment-failures').hidden = !paymentFailuresOpen;
+    $('#payment-failures-card').classList.toggle('is-collapsed', !paymentFailuresOpen);
+    $('#payment-failures-toggle').setAttribute('aria-expanded', String(paymentFailuresOpen));
   }
 
   function applyPlatformBranding() {
@@ -203,11 +208,12 @@
 
   function storeMarkup(store) {
     const disabled = store.is_demo ? 'disabled' : '';
-    return `<article class="store-card" data-store-card="${store.id}">
-      <header><div class="store-identity">${storeLogo(store)}<div><h2>${esc(store.name)}</h2><p>seufood.com/${esc(store.slug)}</p></div></div>
+    const isOpen = openStoreId === String(store.id);
+    return `<article class="store-card${isOpen ? ' is-open' : ''}" data-store-card="${store.id}">
+      <header class="store-summary" data-toggle-store="${store.id}" role="button" tabindex="0" aria-expanded="${isOpen}"><div class="store-identity">${storeLogo(store)}<div><h2>${esc(store.name)}</h2><p>seufood.com/${esc(store.slug)}</p></div></div>
       <div class="badges">${store.is_demo ? '<span class="badge demo">Demonstração</span>' : ''}<span class="badge ${esc(store.status)}">${esc(store.status)}</span></div>
-      <div class="store-actions"><a href="${esc(publicUrl(store))}" target="_blank">Ver cardápio</a><a href="${esc(adminUrl(store))}" target="_blank">Abrir painel</a></div></header>
-      <div class="store-body">
+      <div class="store-actions"><a href="${esc(publicUrl(store))}" target="_blank">Ver cardápio</a><a href="${esc(adminUrl(store))}" target="_blank">Abrir painel</a><button type="button" class="store-toggle" data-toggle-store="${store.id}" aria-label="${isOpen ? 'Fechar' : 'Abrir'} configurações"><span>${isOpen ? 'Fechar' : 'Configurações'}</span><i aria-hidden="true"></i></button></div></header>
+      <div class="store-body" ${isOpen ? '' : 'hidden'}>
         <section class="panel store-config"><h3>Empresa e disponibilidade</h3><form data-store-form="${store.id}">
           <div class="store-logo-editor">
             ${store.logo_url
@@ -302,6 +308,7 @@
     finally { holder?.classList.remove('busy'); event.target.value = ''; }
   };
   $('#platform-logo-remove').onclick = async event => {
+    if (!window.confirm('Excluir a logo da Central Seu Food? A inicial SF voltará a aparecer.')) return;
     event.target.disabled = true;
     try {
       const result = await invoke('update_platform_branding', { logoUrl: '' });
@@ -313,6 +320,8 @@
   };
   $('#store-search').oninput = event => { query = event.target.value.trim(); render(); };
   $('#store-status-filter').onchange = event => { statusFilter = event.target.value; render(); };
+  $('#payment-failures-toggle').onclick = () => { paymentFailuresOpen = !paymentFailuresOpen; renderCommerce(); };
+  $('#store-commerce').onclick = event => { const row = event.target.closest('[data-open-store]'); if (!row) return; openStoreId = row.dataset.openStore; render(); document.querySelector(`[data-store-card="${CSS.escape(openStoreId)}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
   $('#open-new-store').onclick = () => { $('#new-store-dialog').hidden = false; $('#new-store-name').focus(); };
   document.querySelectorAll('[data-close-dialog]').forEach(button => button.onclick = () => { $('#new-store-dialog').hidden = true; });
   $('#new-store-name').oninput = event => {
@@ -406,6 +415,8 @@
   };
 
   $('#store-list').onclick = async event => {
+    const storeToggle = event.target.closest('[data-toggle-store]');
+    if (storeToggle && !event.target.closest('a')) { openStoreId = openStoreId === storeToggle.dataset.toggleStore ? '' : storeToggle.dataset.toggleStore; render(); return; }
     const imageTrigger = event.target.closest('[data-store-logo-trigger]');
     if (imageTrigger) {
       event.stopPropagation();
@@ -420,10 +431,12 @@
     event.target.disabled = true;
     try {
       if (logoButton) {
+        if (!window.confirm('Excluir a logo desta empresa? A inicial do nome será usada no painel e no cardápio.')) { event.target.disabled = false; return; }
         await saveStoreLogo(logoButton.dataset.removeStoreLogo, '');
         notice('Logo removida. A empresa voltou a usar a inicial do nome.');
         return;
       }
+      if (domainButton && !window.confirm('Remover este domínio da empresa? Confirme somente se deseja interromper esta conexão.')) { event.target.disabled = false; return; }
       const result = memberButton
         ? await invoke('set_member_active', { storeId: memberButton.dataset.storeId, userId: memberButton.dataset.memberActive, active: memberButton.dataset.active === 'true' })
         : await invoke('delete_domain', { domainId: domainButton.dataset.deleteDomain });

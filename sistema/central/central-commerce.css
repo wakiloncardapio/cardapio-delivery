@@ -30,3 +30,5 @@
 @media(max-width:1020px){.payment-failure{grid-template-columns:1fr 100px}.payment-failure p{grid-column:1/-1}}
 @media(max-width:680px){.commerce-overview{padding:13px}.topbar-branding{align-items:flex-start!important}.platform-logo-actions{top:calc(100% + 8px)}.payment-failure{grid-template-columns:1fr}.payment-failure p{grid-column:auto}}
 .platform-logo-actions[hidden],.store-logo-actions[hidden],[data-image-tools][hidden]{display:none!important}
+
+.payment-failures-card.is-collapsed{background:#f1f3f4}.failure-company>span:last-child{min-width:0}

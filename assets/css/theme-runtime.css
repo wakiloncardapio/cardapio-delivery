@@ -7,3 +7,11 @@ body{font-family:var(--body-font,Arial,sans-serif)}
 .card-effect-neon .product-card,.card-effect-neon .info-strip,.card-effect-neon .daily-offer{border-color:var(--accent);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent),0 10px 32px color-mix(in srgb,var(--brand-bright) 24%,transparent)}
 @keyframes store-shine{0%,48%{transform:translateX(-180%) rotate(18deg)}72%,100%{transform:translateX(760%) rotate(18deg)}}
 @media(prefers-reduced-motion:reduce){.card-effect-shine .product-card::after,.card-effect-shine .info-strip::after,.card-effect-shine .daily-offer::after{animation:none}}
+
+/* Identidade visual por empresa */
+body{background:var(--paper,#fffaf2)}
+.topbar{background:color-mix(in srgb,var(--paper,#fffaf2) 94%,transparent)}
+.info-strip,.product-card,.daily-offer,.product-modal,.cart,.checkout-modal form,.checkout-review>section,.hours-modal{background:var(--surface,#fff)!important}
+.info-strip,.product-card,.daily-offer,.checkout-review>section{border-radius:var(--container-radius,18px)!important}
+.cart-toggle,.categories button.active,.primary,.success-links a,.checkout-modal form>footer .primary{background:var(--button-bg,var(--brand))!important;color:var(--button-text,#fff)!important}
+.cta{background:var(--button-bg,var(--accent))!important;color:var(--button-text,#fff)!important}

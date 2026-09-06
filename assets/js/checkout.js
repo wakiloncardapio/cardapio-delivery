@@ -6,6 +6,8 @@
   let phoneTimer = null;
   let redirectTimer = null;
   let paymentTimer = null;
+  let zipTimer = null;
+  let lastZipLookup = '';
   let reservationMode = false;
   const profileStorageKey = 'cardapio_customer_profiles_v1';
   const $ = selector => document.querySelector(selector);
@@ -629,6 +631,39 @@
     }
   }
 
+  async function autofillAddressFromZip(zipInput) {
+    const digits = normalizePostalCode(zipInput.value);
+    if (digits.length !== 8 || digits === lastZipLookup) return;
+    lastZipLookup = digits;
+    const form = $('#checkout-form');
+    const cacheKey = `seufood_cep_${digits}`;
+    try {
+      let address = null;
+      try { address = JSON.parse(localStorage.getItem(cacheKey) || 'null'); } catch (_) {}
+      if (!address) {
+        const response = await fetch(`https://viacep.com.br/ws/${digits}/json/`, { headers: { Accept: 'application/json' } });
+        if (!response.ok) throw new Error('CEP indisponível');
+        address = await response.json();
+        if (address.erro) throw new Error('CEP não encontrado');
+        try { localStorage.setItem(cacheKey, JSON.stringify(address)); } catch (_) {}
+      }
+      const values = { street: address.logradouro || '', neighborhood: address.bairro || '', city: address.localidade || '' };
+      Object.entries(values).forEach(([name, value]) => {
+        const input = form.elements.namedItem(name);
+        if (!input || !value) return;
+        if (!input.value.trim() || input.dataset.cepFilled === 'true') input.value = value;
+        input.dataset.cepFilled = 'true';
+      });
+      form.elements.namedItem('number')?.focus();
+      renderDeliveryQuote();
+      if (step >= 3) { renderSummary(); if (step === 4) renderReview(); }
+    } catch (error) {
+      lastZipLookup = '';
+      const quote = $('#delivery-quote');
+      if (quote) quote.textContent = error.message === 'CEP não encontrado' ? 'CEP não encontrado. Confira os números e tente novamente.' : 'Não foi possível consultar o CEP agora. Preencha o endereço manualmente.';
+    }
+  }
+
   function bind() {
     if (bound) return;
     bound = true;
@@ -661,6 +696,8 @@
       const digits = normalizePostalCode(zip.value);
       zip.value = digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
       renderDeliveryQuote();
+      clearTimeout(zipTimer);
+      if (digits.length === 8) zipTimer = setTimeout(() => autofillAddressFromZip(zip), 280);
       if (step >= 3) { renderSummary(); if (step === 4) renderReview(); }
     });
     neighborhood.addEventListener('input', () => { renderDeliveryQuote(); if (step >= 3) renderSummary(); });
