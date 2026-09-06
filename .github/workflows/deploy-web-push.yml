@@ -1,0 +1,46 @@
+name: Ativar Web Push
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'database/migrations/006_web_push.sql'
+      - 'supabase/functions/web-push/**'
+      - '.github/workflows/deploy-web-push.yml'
+permissions:
+  contents: read
+concurrency:
+  group: deploy-web-push
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_ID: tamwadldvmspvmstqggc
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Criar estrutura privada de notificações
+        shell: python
+        run: |
+          import json, os, pathlib, urllib.request, urllib.error
+          token = os.environ.get('SUPABASE_ACCESS_TOKEN')
+          if not token:
+              raise SystemExit('Configure o secret SUPABASE_ACCESS_TOKEN nas Actions.')
+          query = pathlib.Path('database/migrations/006_web_push.sql').read_text()
+          req = urllib.request.Request(
+              'https://api.supabase.com/v1/projects/' + os.environ['PROJECT_ID'] + '/database/query',
+              data=json.dumps({'query': query, 'read_only': False}).encode(),
+              headers={'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json'})
+          try:
+              with urllib.request.urlopen(req, timeout=120) as response:
+                  if response.status != 200: raise SystemExit('Migração não aplicada.')
+          except urllib.error.HTTPError as error:
+              raise SystemExit('Falha na migração Web Push. HTTP ' + str(error.code))
+          print('Estrutura Web Push aplicada.')
+      - name: Publicar serviço autenticado de Web Push
+        run: supabase functions deploy web-push --project-ref "$PROJECT_ID" --no-verify-jwt

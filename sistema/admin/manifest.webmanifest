@@ -1,0 +1,14 @@
+{
+  "id": "/sistema/admin/",
+  "name": "Seu Food — Pedidos",
+  "short_name": "Seu Food",
+  "start_url": "/sistema/admin/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f1f3f4",
+  "theme_color": "#0d6b4f",
+  "icons": [
+    { "src": "/assets/images/push/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/assets/images/push/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

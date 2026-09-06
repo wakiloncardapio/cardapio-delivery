@@ -97,6 +97,7 @@
       fill();
       renderAll();
       startOrderPolling();
+      if (new URLSearchParams(location.search).get("tab") === "orders") document.querySelector('[data-tab="orders"]')?.click();
     } catch (error) {
       notice(error.message, true);
     }
@@ -1757,22 +1758,8 @@
     }
   }
 
-  function updateNotificationPermissionStatus() {
-    const box = $('#notification-permission-status');
-    if (!box) return;
-    if (!('Notification' in window)) { box.textContent = 'Este navegador não oferece notificações na tela.'; box.className = 'notification-permission error'; return; }
-    const labels = { granted: 'Avisos permitidos neste aparelho.', denied: 'Avisos bloqueados pelo navegador. Libere nas configurações do site.', default: 'Permissão ainda não solicitada.' };
-    box.textContent = labels[Notification.permission] || labels.default;
-    box.className = 'notification-permission ' + (Notification.permission === 'granted' ? 'allowed' : Notification.permission === 'denied' ? 'error' : '');
-  }
-  async function enableBrowserNotifications() {
-    if (!('Notification' in window)) return updateNotificationPermissionStatus();
-    const permission = await Notification.requestPermission();
-    $('#browser-notifications-enabled').checked = permission === 'granted';
-    catalog.settings.browserNotificationsEnabled = permission === 'granted';
-    updateNotificationPermissionStatus();
-    if (permission === 'granted') notice('Avisos liberados neste aparelho. Publique as alterações para manter a opção ativa.');
-  }
+  function updateNotificationPermissionStatus() { window.SeuFoodPush?.refresh(); }
+  async function enableBrowserNotifications() { await window.SeuFoodPush?.activate(); }
   function playNewOrderSound() {
     if (catalog.settings.notificationSoundEnabled === false) return;
     try {
@@ -1785,7 +1772,7 @@
   }
   async function notifyNewOrders(newOrders) {
     playNewOrderSound();
-    if (!catalog.settings.browserNotificationsEnabled || !('Notification' in window) || Notification.permission !== 'granted') return;
+    if (window.SeuFoodPush?.isActive() || !catalog.settings.browserNotificationsEnabled || !('Notification' in window) || Notification.permission !== 'granted') return;
     const first = newOrders[0] || {}, title = newOrders.length === 1 ? 'Novo pedido recebido' : `${newOrders.length} novos pedidos`;
     const body = newOrders.length === 1 ? `${first.order_number || 'Novo pedido'} · ${money(first.total || 0)}` : 'Abra o painel para conferir os novos pedidos.';
     try {
@@ -2120,3 +2107,4 @@
   bind();
   boot();
 })();
+
