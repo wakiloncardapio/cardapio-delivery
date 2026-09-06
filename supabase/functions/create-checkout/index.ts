@@ -125,15 +125,11 @@ Deno.serve(async req => {
   };
 
   if (paymentMode === 'pix') {
-    // Confirme o ambiente diretamente no Mercado Pago. Isso também corrige
-    // credenciais de teste que foram salvas antes de a plataforma passar a usar
-    // o prefixo APP_USR no sandbox.
-    const accountResponse = await fetch('https://api.mercadopago.com/users/me', {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
-    const account = await accountResponse.json().catch(() => ({}));
-    const pixTestMode = credentials.liveMode === false || account.test_user === true ||
-      accessToken.startsWith('TEST-') || credentials.publicKey.startsWith('TEST-');
+    // Use o modo já confirmado e sinais locais das credenciais. Evita uma
+    // consulta extra ao Mercado Pago antes de cada Pix.
+    const pixTestMode = credentials.liveMode === false ||
+      accessToken.startsWith('TEST-') || credentials.publicKey.startsWith('TEST-') ||
+      /@testuser\.com$/i.test(credentials.accountEmail);
     const pixEndpoint = pixTestMode
       ? 'https://api.mercadopago.com/v1/orders'
       : 'https://api.mercadopago.com/v1/payments';
@@ -173,6 +169,7 @@ Deno.serve(async req => {
       body: JSON.stringify(pixPayload)
     });
     let result = await response.json().catch(() => ({}));
+    let usedOrdersTest = pixTestMode;
     // Algumas credenciais de sandbox são reportadas como contas reais pelo
     // endpoint /users/me. Se a API antiga recusar exatamente por esse conflito,
     // repita uma única vez pelo fluxo oficial de teste da Orders API.
@@ -184,6 +181,7 @@ Deno.serve(async req => {
         body: JSON.stringify(pixTestPayload)
       });
       result = await response.json().catch(() => ({}));
+      usedOrdersTest = response.ok;
     }
     if (!response.ok) {
       const failure = paymentFailure(result, 'O Mercado Pago não conseguiu gerar o PIX.');
@@ -194,6 +192,11 @@ Deno.serve(async req => {
       });
       await recordAnalyticsEvent(db, { storeId, orderId: order.id, eventName: 'payment_failed', value: order.total, items: order.items });
       return json({ error: failure.message }, response.status);
+    }
+    // Memorize o sandbox recuperado para abrir os próximos Pix diretamente.
+    if (usedOrdersTest && credentials.liveMode) {
+      await db.from('payment_provider_configs').update({ live_mode: false })
+        .eq('store_id', storeId).eq('provider', 'mercadopago');
     }
     const details = paymentDetails(result);
     // A Orders API de teste retorna o Pix copia e cola e pode deixar a imagem
