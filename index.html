@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="store-loading">
 <head>
   <meta charset="utf-8">
   <script>if(location.protocol==='http:'&&!/^(localhost|127\.0\.0\.1)$/i.test(location.hostname)){location.replace('https://'+location.host+location.pathname+location.search+location.hash)}</script>
@@ -33,8 +33,10 @@
   <link rel="stylesheet" href="assets/css/theme-runtime.css?v=20260906-control-center">
   <link rel="stylesheet" href="assets/css/consent.css?v=20260830-bannerfix">
   <link rel="stylesheet" href="assets/css/layout-guard.css?v=20260906-overflow-audit">
+  <style id="store-loading-style">html.store-loading body{overflow:hidden;background:#f7f7f7}html.store-loading body>:not(#store-loading-screen):not(script){visibility:hidden!important}#store-loading-screen{position:fixed;z-index:9999;inset:0;display:grid;place-items:center;padding:24px;background:#f7f7f7;color:#202124;font-family:Arial,sans-serif}#store-loading-screen>div{display:grid;justify-items:center;gap:12px;text-align:center}#store-loading-screen i{width:36px;height:36px;border:4px solid #dfe4e1;border-top-color:#0d6b4f;border-radius:50%;animation:store-loader-spin .8s linear infinite}#store-loading-screen b{font-size:15px}#store-loading-screen span{color:#68706c;font-size:12px}#store-loading-screen button{padding:11px 15px;border:0;border-radius:9px;background:#0d6b4f;color:#fff;font-weight:800}#store-loading-screen[hidden]{display:none!important}@keyframes store-loader-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){#store-loading-screen i{animation:none}}</style>
 </head>
 <body>
+  <div id="store-loading-screen" role="status" aria-live="polite"><div><i aria-hidden="true"></i><b>Carregando cardápio...</b><span>Preparando os dados desta empresa.</span></div></div>
   <header class="topbar">
     <a class="brand" href="#inicio"><span class="brand-mark">SD</span><span><b data-store-name>Seu Delivery</b><small>DELIVERY PRÓPRIO</small></span></a>
     <nav><a href="#cardapio">Cardápio</a><a href="#entrega">Entrega</a><a id="nav-whatsapp" target="_blank" rel="noopener">Contato</a></nav>
@@ -160,6 +162,7 @@
   <script src="assets/js/supabase-config.js"></script>
   <script src="assets/js/supabase-store.js?v=20260905-commerce"></script>
   <script src="assets/js/api.js?v=20260905-commerce"></script>
+  <script src="assets/js/storefront-loader.js?v=20260906-no-template-flash"></script>
   <script src="assets/js/cart.js?v=20260831-free-delivery"></script>
   <script src="assets/js/checkout.js?v=20260906-cep"></script>
   <script src="assets/js/app.js?v=20260906-control-center"></script>
